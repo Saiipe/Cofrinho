@@ -1,0 +1,85 @@
+import { describe, expect, it } from 'vitest';
+import {
+  dueOccurrences,
+  initialLastRun,
+  nextOccurrence,
+  occurrence,
+  recomputeLastRun,
+  statusForCount,
+  type RunState,
+} from './schedule';
+
+const monthlyRent: RunState = { frequency: 'monthly', startDate: '2026-01-01', lastRunDate: '2026-01-01', totalCount: 0, runCount: 1 };
+
+describe('occurrences', () => {
+  it('anchors on the start date for every frequency', () => {
+    expect(occurrence({ frequency: 'weekly', startDate: '2026-10-20' }, 2)).toBe('2026-11-03');
+    expect(occurrence({ frequency: 'biweekly', startDate: '2026-10-20' }, 1)).toBe('2026-11-03');
+    expect(occurrence({ frequency: 'quarterly', startDate: '2026-01-15' }, 3)).toBe('2026-10-15');
+    expect(occurrence({ frequency: 'every4months', startDate: '2026-01-15' }, 2)).toBe('2026-09-15');
+    expect(occurrence({ frequency: 'semiannual', startDate: '2026-01-15' }, 3)).toBe('2027-07-15');
+    expect(occurrence({ frequency: 'yearly', startDate: '2024-02-29' }, 1)).toBe('2025-02-28');
+  });
+
+  it('does not drift after clamping a short month', () => {
+    const rule = { frequency: 'monthly' as const, startDate: '2026-01-31' };
+    expect([1, 2, 3].map((i) => occurrence(rule, i))).toEqual(['2026-02-28', '2026-03-31', '2026-04-30']);
+  });
+});
+
+describe('dueOccurrences', () => {
+  it('catches up every missed run, each on its own date (rent example)', () => {
+    expect(dueOccurrences(monthlyRent, '2026-03-05')).toEqual(['2026-02-01', '2026-03-01']);
+  });
+
+  it('never records future dates and never repeats a date', () => {
+    expect(dueOccurrences({ ...monthlyRent, lastRunDate: '2026-03-01' }, '2026-03-05')).toEqual([]);
+    expect(dueOccurrences({ ...monthlyRent, lastRunDate: null, runCount: 0 }, '2025-12-31')).toEqual([]);
+  });
+
+  it('stops at the run limit', () => {
+    const limited: RunState = { frequency: 'monthly', startDate: '2026-01-01', lastRunDate: null, totalCount: 3, runCount: 0 };
+    expect(dueOccurrences(limited, '2026-12-31')).toEqual(['2026-01-01', '2026-02-01', '2026-03-01']);
+    expect(dueOccurrences({ ...limited, runCount: 3, lastRunDate: '2026-03-01' }, '2026-12-31')).toEqual([]);
+    expect(nextOccurrence({ ...limited, runCount: 3, lastRunDate: '2026-03-01' })).toBeNull();
+  });
+
+  it('handles long daily catch-ups', () => {
+    const daily: RunState = { frequency: 'daily', startDate: '2026-01-01', lastRunDate: '2026-01-10', totalCount: 0, runCount: 10 };
+    const due = dueOccurrences(daily, '2026-02-09');
+    expect(due).toHaveLength(30);
+    expect(due[0]).toBe('2026-01-11');
+    expect(due.at(-1)).toBe('2026-02-09');
+  });
+});
+
+describe('creating and editing plans', () => {
+  it('does not backfill ended periods when created with a past start date', () => {
+    const rule = { frequency: 'monthly' as const, startDate: '2025-01-01' };
+    const last = initialLastRun(rule, '2026-03-05');
+    expect(last).toBe('2026-03-01');
+    expect(dueOccurrences({ ...rule, lastRunDate: last, totalCount: 0, runCount: 0 }, '2026-03-05')).toEqual([]);
+    expect(nextOccurrence({ ...rule, lastRunDate: last, totalCount: 0, runCount: 0 })).toBe('2026-04-01');
+  });
+
+  it('runs today when the start date is today', () => {
+    const rule = { frequency: 'monthly' as const, startDate: '2026-10-20' };
+    const last = initialLastRun(rule, '2026-10-20');
+    expect(last).toBeNull();
+    expect(dueOccurrences({ ...rule, lastRunDate: last, totalCount: 0, runCount: 0 }, '2026-10-20')).toEqual(['2026-10-20']);
+  });
+
+  it('does not record twice when the rule changes after running today', () => {
+    const weekly = { frequency: 'weekly' as const, startDate: '2026-10-20' };
+    const last = recomputeLastRun(weekly, '2026-10-20', '2026-10-20');
+    expect(last).toBe('2026-10-20');
+    expect(dueOccurrences({ ...weekly, lastRunDate: last, totalCount: 0, runCount: 1 }, '2026-10-20')).toEqual([]);
+  });
+
+  it('updates status from the run counter', () => {
+    expect(statusForCount('active', 3, 3)).toBe('completed');
+    expect(statusForCount('completed', 6, 3)).toBe('active');
+    expect(statusForCount('completed', 0, 12)).toBe('active');
+    expect(statusForCount('paused', 6, 3)).toBe('paused');
+  });
+});

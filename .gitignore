@@ -1,0 +1,33 @@
+# Dependencies & builds
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.tsbuildinfo
+node_modules/.tmp/
+
+# Android build outputs (the Gradle project itself is versioned)
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/app/src/main/assets/public/
+release/
+
+# Signing secrets — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Original third-party app analyzed with REA (not redistributable)
+Money-Tracker-Expense-Budget_1.1.147_apkcube.apks
+Money-Tracker-*
+*.apks
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
