@@ -4,6 +4,7 @@ import { releasesSince, type ChangeKind, type Release } from '@/changelog';
 import type { MessageKey } from '@/i18n';
 import { APP_VERSION } from '@/services/platform';
 import { useApp } from '../app/AppContext';
+import { QUICK_MODE } from '../quickMode';
 import { Sheet } from './Sheet';
 import { Badge, Button, cx } from './primitives';
 
@@ -38,7 +39,7 @@ export function ReleaseNotes({ release, current, className }: { release: Release
 export function UpdateNotes() {
   const { settings, updateSettings, t } = useApp();
   const navigate = useNavigate();
-  const pending = settings.onboarded && settings.lastSeenVersion !== APP_VERSION;
+  const pending = !QUICK_MODE && settings.onboarded && settings.lastSeenVersion !== APP_VERSION;
   const releases = pending ? releasesSince(settings.lastSeenVersion, APP_VERSION) : [];
   const done = () => void updateSettings({ lastSeenVersion: APP_VERSION });
   const nothingNew = pending && releases.length === 0;

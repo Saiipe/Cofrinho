@@ -9,7 +9,6 @@ import { runDueSchedules } from '@/data/schedules';
 import { transactionsInPeriod } from '@/data/transactions';
 import { monthPeriodOf, todayKey } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
-import { totals } from '@/domain/stats';
 import { getLockConfig } from '@/services/lock';
 import { deepLinkPath, updateWidgets } from '@/services/native';
 import { notifyNow, startWebReminderTimers, syncNativeReminders } from '@/services/notifications';
@@ -19,6 +18,7 @@ import { useFormat } from '../hooks/useFormat';
 import { useApp } from './AppContext';
 import { useBook } from './BookContext';
 import { handleBack } from './back';
+import { widgetCategories, widgetPayload } from './widgets';
 
 const TAB_ROOTS = ['/', '/charts', '/reports', '/me'];
 
@@ -112,7 +112,8 @@ export function Lifecycle() {
     if (!isNative) return;
     const open = (url: string | undefined) => {
       const path = url ? deepLinkPath(url) : null;
-      if (path) navigate(path);
+      // The mini screen already starts on its link; do not stack it twice.
+      if (path && path !== window.location.pathname + window.location.search) navigate(path);
     };
     if (!launchUrlHandled) {
       launchUrlHandled = true;
@@ -137,7 +138,7 @@ export function Lifecycle() {
 /** Keeps the home-screen widgets showing the current month of the current book. */
 function useWidgetSync() {
   const { settings, t } = useApp();
-  const { book } = useBook();
+  const { book, categoryMap, topCategories, categoryName } = useBook();
   const format = useFormat();
   const today = todayKey();
   const period = useMemo(() => monthPeriodOf(today, settings.monthStartDay), [today, settings.monthStartDay]);
@@ -146,23 +147,9 @@ function useWidgetSync() {
 
   useEffect(() => {
     if (!transactions || !lock) return;
-    const sums = totals(transactions);
-    // Amounts on the home screen are visible to anyone holding the phone.
-    const hidden = settings.hideAmounts || lock.enabled;
-    const money = (value: number, sign?: 'always') => (hidden ? '••••' : format.money(value, undefined, sign ? { sign } : undefined));
-    const timer = window.setTimeout(() => {
-      void updateWidgets({
-        month: format.periodLabel(period),
-        spentLabel: t('widgets.spent'),
-        spent: money(sums.expense),
-        incomeLabel: t('widgets.received'),
-        income: money(sums.income),
-        balanceLabel: t('widgets.balance'),
-        balance: money(sums.balance, 'always'),
-        expenseButton: t('kind.expense'),
-        incomeButton: t('kind.income'),
-      });
-    }, 500);
+    const shortcuts = widgetCategories(transactions, categoryMap, topCategories('expense')).map((c) => ({ id: c.id, name: categoryName(c) }));
+    const data = widgetPayload({ transactions, period, hidden: settings.hideAmounts || lock.enabled, shortcuts }, format, t);
+    const timer = window.setTimeout(() => void updateWidgets(data), 500);
     return () => window.clearTimeout(timer);
-  }, [transactions, lock, settings.hideAmounts, format, period, t]);
+  }, [transactions, lock, settings.hideAmounts, format, period, t, categoryMap, topCategories, categoryName]);
 }

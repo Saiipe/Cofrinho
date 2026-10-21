@@ -175,6 +175,12 @@
   }
 }
 
+/* Mini screen over the home screen (Android widgets): only the sheet is opaque. */
+html.quick-mode,
+html.quick-mode body {
+  background: transparent;
+}
+
 @utility pt-safe {
   padding-top: env(safe-area-inset-top);
 }

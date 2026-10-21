@@ -7,7 +7,7 @@ import { isNative } from './platform';
  */
 
 export type ShortcutIcon = 'expense' | 'income' | 'search' | 'garden' | 'goals' | 'cards';
-export type WidgetKind = 'quick' | 'summary';
+export type WidgetKind = 'quick' | 'summary' | 'entry';
 
 export interface WidgetData {
   month: string;
@@ -19,6 +19,8 @@ export interface WidgetData {
   balance: string;
   expenseButton: string;
   incomeButton: string;
+  /** `[{ id, name }]` of the expense categories offered as shortcuts by the "Cadastro rápido" widget. */
+  categoriesJson: string;
 }
 
 interface CofrinhoPlugin {
@@ -26,6 +28,8 @@ interface CofrinhoPlugin {
   pinShortcut(options: { id: string; label: string; url: string; icon: ShortcutIcon }): Promise<{ requested: boolean }>;
   requestPinWidget(options: { kind: WidgetKind }): Promise<{ requested: boolean }>;
   updateWidgets(options: WidgetData): Promise<void>;
+  closeQuickAdd(): Promise<void>;
+  openApp(options: { url: string }): Promise<void>;
 }
 
 const Cofrinho = registerPlugin<CofrinhoPlugin>('Cofrinho');
@@ -74,5 +78,27 @@ export async function updateWidgets(data: WidgetData): Promise<void> {
     await Cofrinho.updateWidgets(data);
   } catch {
     // Older native shells without the plugin simply have no widgets to refresh.
+  }
+}
+
+/** Closes the mini screen opened by a widget (Android); the home screen shows again. */
+export async function closeQuickAdd(): Promise<boolean> {
+  if (!isNative) return false;
+  try {
+    await Cofrinho.closeQuickAdd();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** From the mini screen, continues in the full app at `path` (e.g. the complete record form). */
+export async function openInApp(path: string): Promise<boolean> {
+  if (!isNative) return false;
+  try {
+    await Cofrinho.openApp({ url: `${DEEP_LINK_SCHEME}://${path.replace(/^\//, '')}` });
+    return true;
+  } catch {
+    return false;
   }
 }

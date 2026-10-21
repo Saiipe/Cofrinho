@@ -7,6 +7,13 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.2 — Cadastro pelo widget
+
+- **Melhoria:** widget novo "Cadastro rápido", tamanho 3×2 (6 blocos): gastos do mês, botões Despesa e Receita e atalhos das 3 categorias que você mais usa.
+- **Melhoria:** os botões de todos os widgets abrem uma **mini tela** por cima da tela inicial (sem abrir o app inteiro): tipo, valor no teclado-calculadora, categoria e conta. Ao salvar, ela fecha sozinha e o widget já mostra o novo total.
+- **Melhoria:** na mini tela, "Mais opções no app" leva o que foi digitado para o cadastro completo (tags, observações, anexos, parcelas, repetir).
+- O Android não permite campos de digitação dentro do próprio widget; a mini tela é a forma de cadastrar sem sair da tela inicial.
+
 ## 5.1 — Novidades da atualização
 
 - **Melhoria:** ao abrir uma versão nova, o app mostra uma vez o que mudou desde a versão que você usava (quem vem da 1.0 vê tudo de 1.1 a 5.1). Instalações novas não mostram o aviso.

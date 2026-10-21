@@ -15,4 +15,5 @@
     <color name="shortcut_garden">#65A30D</color>
     <color name="shortcut_goals">#7C3AED</color>
     <color name="shortcut_cards">#2563EB</color>
+    <color name="widget_chip_bg">#F1F4F7</color>
 </resources>

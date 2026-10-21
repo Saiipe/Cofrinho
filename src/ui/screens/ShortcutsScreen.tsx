@@ -1,4 +1,4 @@
-import { CreditCard, Goal, Info, LayoutGrid, Minus, Plus, Search, ShieldCheck, Sprout, SquarePlus, type LucideIcon } from 'lucide-react';
+import { CreditCard, Goal, Info, LayoutGrid, Minus, PanelBottom, Plus, Search, ShieldCheck, Sprout, SquarePlus, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { nativeCapabilities, pinShortcut, requestPinWidget, type ShortcutIcon, type WidgetKind } from '@/services/native';
 import { isNative } from '@/services/platform';
@@ -27,6 +27,7 @@ export const SHORTCUTS: ShortcutOption[] = [
 ];
 
 const WIDGETS: { kind: WidgetKind; title: MessageKey; hint: MessageKey }[] = [
+  { kind: 'entry', title: 'widgets.entry', hint: 'widgets.entryHint' },
   { kind: 'quick', title: 'widgets.quick', hint: 'widgets.quickHint' },
   { kind: 'summary', title: 'widgets.summary', hint: 'widgets.summaryHint' },
 ];
@@ -80,7 +81,7 @@ export default function ShortcutsScreen() {
             <div key={widget.kind}>
               {index > 0 && <Divider inset />}
               <Row
-                leading={<Glyph icon={widget.kind === 'quick' ? SquarePlus : LayoutGrid} color="#0f766e" />}
+                leading={<Glyph icon={widget.kind === 'summary' ? LayoutGrid : widget.kind === 'entry' ? PanelBottom : SquarePlus} color="#0f766e" />}
                 title={t(widget.title)}
                 subtitle={t(widget.hint)}
                 trailing={

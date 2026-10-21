@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  Android 7.0+ · Versão 5.1.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
+  Android 7.0+ · Versão 5.2.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
 </p>
 
 <p align="center"><i>Esta é a foto do software de finanças: o gato da sorte pirata guardando uma moeda dourada — o “cofrinho” do app.</i></p>
@@ -51,7 +51,7 @@ Money Tracker (.apks, Flutter)
 Especificação: 15 tabelas · 26 artigos de ajuda · regras de recorrência, orçamento, divisão…
         │  implementação nova (React + TypeScript + Capacitor)
         ▼
-Cofrinho 5.1.0 — release/Cofrinho-5.1.0.apk
+Cofrinho 5.2.0 — release/Cofrinho-5.2.0.apk
 ```
 
 ## Telas
@@ -111,6 +111,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 | 4.0 | Metas de economia |
 | 5.0 | Widgets de lançamento rápido e resumo do mês |
 | 5.1 | Aviso de novidades depois de cada atualização (changelog no app) |
+| 5.2 | Widget "Cadastro rápido" (3×2) e mini tela para lançar pelo widget sem abrir o app |
 | próximas | 6.0 investimentos · 7.0 IA com Gemini · 7.1 desafios · 8.0 backup no Google Drive |
 
 ## Funcionalidades
@@ -167,13 +168,13 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ### Android
 
-- **Widgets**: “Lançamento rápido” (despesa/receita com um toque) e “Resumo do mês”, que escondem valores quando “Ocultar valores” ou o bloqueio estão ativos.
+- **Widgets**: “Cadastro rápido” (3×2, com as categorias mais usadas), “Lançamento rápido” (2×1) e “Resumo do mês” (4×2). Os botões abrem uma **mini tela** por cima da tela inicial para lançar sem abrir o app; os valores ficam ocultos com “Ocultar valores” ou o bloqueio ativos.
 - **Atalhos**: segure o ícone do app para Nova despesa, Nova receita e Buscar; ou crie atalhos fixos na tela do celular em *Perfil › Widgets e atalhos*.
 - O botão voltar fecha painéis e o teclado antes de sair da tela e pergunta antes de fechar o app.
 
 ## Instalar no celular
 
-O APK pronto fica em **`release/Cofrinho-5.1.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
+O APK pronto fica em **`release/Cofrinho-5.2.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
 
 1. Copie o arquivo para o celular (cabo USB, Google Drive, WhatsApp…).
 2. Toque no arquivo e permita **“instalar apps desconhecidos”** para o app usado para abri-lo.
@@ -255,7 +256,7 @@ Decisões principais:
 
 ## Testes e verificação
 
-- **103 testes automatizados** (`npm test`) cobrindo regras de domínio (faturas, parcelas, metas, recorrência…), banco de dados e importação/exportação.
+- **105 testes automatizados** (`npm test`) cobrindo regras de domínio (faturas, parcelas, metas, recorrência…), banco de dados e importação/exportação.
 - **Roteiros no navegador** feitos com o REA em tela de celular (390×844), nos modos claro e escuro: boas-vindas, lançamentos, contas, recorrentes, calendário, busca, livro dividido, acerto de contas e jardim — todos sem erros de página. As capturas acima saíram desses roteiros.
 - **APK** conferido com as ferramentas oficiais do Android (`apksigner verify` e `aapt2 dump badging`).
 
