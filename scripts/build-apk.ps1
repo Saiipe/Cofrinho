@@ -27,7 +27,10 @@ if (-not (Test-Path $props)) {
   "storeFile=keystore/cofrinho-release.jks`nstorePassword=$password`nkeyAlias=cofrinho`nkeyPassword=$password" | Set-Content $props -Encoding ascii
 }
 
-Write-Host '1/4 Building web app' -ForegroundColor Cyan
+Write-Host '1/4 Testing and building web app' -ForegroundColor Cyan
+# Tests include the changelog check: a new version cannot ship without its release notes.
+npm test
+if ($LASTEXITCODE -ne 0) { throw 'tests failed' }
 npm run build
 if ($LASTEXITCODE -ne 0) { throw 'web build failed' }
 
