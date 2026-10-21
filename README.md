@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  Android 7.0+ · Versão 5.2.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
+  Android 7.0+ · Versão 5.3.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
 </p>
 
 <p align="center"><i>Esta é a foto do software de finanças: o gato da sorte pirata guardando uma moeda dourada — o “cofrinho” do app.</i></p>
@@ -51,7 +51,7 @@ Money Tracker (.apks, Flutter)
 Especificação: 15 tabelas · 26 artigos de ajuda · regras de recorrência, orçamento, divisão…
         │  implementação nova (React + TypeScript + Capacitor)
         ▼
-Cofrinho 5.2.0 — release/Cofrinho-5.2.0.apk
+Cofrinho 5.3.0 — release/Cofrinho-5.3.0.apk
 ```
 
 ## Telas
@@ -112,6 +112,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 | 5.0 | Widgets de lançamento rápido e resumo do mês |
 | 5.1 | Aviso de novidades depois de cada atualização (changelog no app) |
 | 5.2 | Widget "Cadastro rápido" (3×2) e mini tela para lançar pelo widget sem abrir o app |
+| 5.3 | Cadastro de conta por tipo, compras que já estavam no cartão e barra de botões fixa no lançamento |
 | próximas | 6.0 investimentos · 7.0 IA com Gemini · 7.1 desafios · 8.0 backup no Google Drive |
 
 ## Funcionalidades
@@ -149,7 +150,8 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 - Contas: dinheiro, banco, cartão de crédito, carteira digital, investimento, “a receber” e “a pagar”.
 - Saldo inicial, conta padrão, ajuste de saldo, “não somar nos totais” e ordenação por arrastar.
 - **Banco da conta** escolhido na lista oficial do Banco Central (469 instituições, com logos — pacote [logos-bancos-br](https://github.com/rzmt/logos-bancos-br)).
-- **Cartões de crédito**: limite usado/disponível, dia de fechamento e vencimento, fatura de cada mês (aberta, fechada, paga, vencida), próximas faturas e “Pagar fatura”.
+- **Cartões de crédito**: limite usado/disponível, dia de fechamento e vencimento, fatura de cada mês (aberta, fechada, paga, vencida), próximas faturas e “Pagar fatura”. Ao cadastrar o cartão, dá para lançar as compras que já estão nele (parcelas que faltam e o valor da fatura).
+- Cadastro de conta personalizado para cada tipo (cartão, conta, carteira, investimento, a receber, a pagar).
 - Vários **livros**: pessoal, negócio, projeto e **dividido**.
 - No livro dividido: quem pagou, divisão igual, por valores, cotas ou porcentagem, e **acerto inteligente** com o mínimo de pagamentos.
 
@@ -174,7 +176,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ## Instalar no celular
 
-O APK pronto fica em **`release/Cofrinho-5.2.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
+O APK pronto fica em **`release/Cofrinho-5.3.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
 
 1. Copie o arquivo para o celular (cabo USB, Google Drive, WhatsApp…).
 2. Toque no arquivo e permita **“instalar apps desconhecidos”** para o app usado para abri-lo.
@@ -256,7 +258,7 @@ Decisões principais:
 
 ## Testes e verificação
 
-- **105 testes automatizados** (`npm test`) cobrindo regras de domínio (faturas, parcelas, metas, recorrência…), banco de dados e importação/exportação.
+- **108 testes automatizados** (`npm test`) cobrindo regras de domínio (faturas, parcelas, metas, recorrência…), banco de dados e importação/exportação.
 - **Roteiros no navegador** feitos com o REA em tela de celular (390×844), nos modos claro e escuro: boas-vindas, lançamentos, contas, recorrentes, calendário, busca, livro dividido, acerto de contas e jardim — todos sem erros de página. As capturas acima saíram desses roteiros.
 - **APK** conferido com as ferramentas oficiais do Android (`apksigner verify` e `aapt2 dump badging`).
 

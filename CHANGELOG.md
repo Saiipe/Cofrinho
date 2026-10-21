@@ -7,6 +7,25 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.3 — Cadastro mais claro
+
+- **Melhoria:** o cadastro de conta muda conforme o tipo escolhido, com uma explicação em cada opção:
+  - **Cartão de crédito:** banco, nome, limite, fechamento e vencimento.
+  - **Conta bancária e carteira digital:** banco/app e "Saldo atual".
+  - **Investimento:** banco/corretora e "Valor aplicado hoje".
+  - **Dinheiro:** "Quanto tem agora".
+  - **A receber:** "Quem te deve?" e "Quanto te devem hoje".
+  - **A pagar:** "Para quem você deve?" e "Quanto você deve hoje".
+  - "Conta padrão" virou "Usar nos novos lançamentos"; cor, moeda, "Não somar nos totais" e observação ficaram em **Mais opções**.
+- **Novo:** "Compras que já estão no cartão", no cadastro do cartão e na tela do cartão:
+  - **Compra parcelada:** informe em quantas vezes e qual parcela vem na fatura; o app lança só as parcelas que faltam, uma por mês, como despesas do cartão.
+  - **Compra à vista:** lançada como despesa na fatura escolhida.
+  - **Valor da fatura (sem detalhar as compras):** entra na fatura e no limite usado, mas não conta como despesa do mês.
+  - Se uma fatura acabou de fechar e ainda não venceu, dá para escolher em qual fatura cada item está.
+- **Melhoria:** no cadastro de despesa, "Pago com" (ou "Recebido em") separa cartões e contas, mostra o limite disponível de cada cartão e tem atalho para criar conta ou cartão. Com um cartão escolhido, o valor mostra o disponível e em qual fatura a compra entra.
+- **Correção:** ao marcar "Repetir", o botão ficava cortado no canto da tela do celular. Data e conta agora ficam lado a lado e Repetir, Parcelas, Tags, Observações e Anexos viraram uma barra de botões de largura fixa.
+- Novos cartões não usam mais a "Dívida atual" solta (que não entrava em nenhuma fatura); cartões antigos com esse valor o mostram em Mais opções.
+
 ## 5.2 — Cadastro pelo widget
 
 - **Melhoria:** widget novo "Cadastro rápido", tamanho 3×2 (6 blocos): gastos do mês, botões Despesa e Receita e atalhos das 3 categorias que você mais usa.
