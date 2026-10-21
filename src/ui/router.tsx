@@ -6,6 +6,7 @@ import { LongPressTooltip } from './components/LongPressTooltip';
 import { UpdateNotes } from './components/ReleaseNotes';
 import { PageFallback } from './components/Splash';
 import HomeScreen from './screens/HomeScreen';
+import QuickAddScreen from './screens/QuickAddScreen';
 import TransactionFormScreen from './screens/TransactionFormScreen';
 
 function page(loader: () => Promise<{ default: ComponentType }>) {
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
         ],
       },
       { path: 'tx/new', element: <TransactionFormScreen /> },
+      { path: 'quick', element: <QuickAddScreen /> },
       { path: 'tx/:id', element: page(() => import('./screens/TransactionDetailScreen')) },
       { path: 'tx/:id/edit', element: <TransactionFormScreen /> },
       { path: 'search', element: page(() => import('./screens/SearchScreen')) },

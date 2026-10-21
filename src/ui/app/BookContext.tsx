@@ -37,15 +37,23 @@ export function BookProvider({ children, fallback }: { children: ReactNode; fall
   const books = useLiveQuery(() => db.books.orderBy('order').toArray(), []);
   const book = books?.find((b) => b.id === settings.currentBookId) ?? books?.[0];
   const bookId = book?.id ?? '';
-  const categories = useLiveQuery(() => db.categories.where('bookId').equals(bookId).toArray(), [bookId]);
-  const accounts = useLiveQuery(() => db.accounts.where('bookId').equals(bookId).toArray(), [bookId]);
-  const members = useLiveQuery(() => db.members.where('bookId').equals(bookId).toArray(), [bookId]);
-  const tags = useLiveQuery(() => db.tags.where('bookId').equals(bookId).toArray(), [bookId]);
+  // Tagged with the book they were read for: right after launch or a book switch the previous
+  // result is still around, and the screens must never see another book's (or no) categories.
+  const scoped = useLiveQuery(async () => {
+    const [categories, accounts, members, tags] = await Promise.all([
+      db.categories.where('bookId').equals(bookId).toArray(),
+      db.accounts.where('bookId').equals(bookId).toArray(),
+      db.members.where('bookId').equals(bookId).toArray(),
+      db.tags.where('bookId').equals(bookId).toArray(),
+    ]);
+    return { bookId, categories, accounts, members, tags };
+  }, [bookId]);
   const market = useLiveQuery(() => db.rates.toArray(), []);
   const custom = useLiveQuery(() => db.customRates.toArray(), []);
 
   const value = useMemo<BookContextValue | null>(() => {
-    if (!book || !books || !categories || !accounts || !members || !tags || !market || !custom) return null;
+    if (!book || !books || !scoped || scoped.bookId !== book.id || !market || !custom) return null;
+    const { categories, accounts, members, tags } = scoped;
     const sortedCategories = [...categories].sort(byOrder);
     const sortedAccounts = [...accounts].sort(byOrder);
     const sortedMembers = [...members].sort(byOrder);
@@ -75,7 +83,7 @@ export function BookProvider({ children, fallback }: { children: ReactNode; fall
       childrenOf: (parentId) => sortedCategories.filter((c) => c.parentId === parentId),
       defaultAccount: sortedAccounts.find((a) => a.isDefault),
     };
-  }, [book, books, categories, accounts, members, tags, market, custom, t]);
+  }, [book, books, scoped, market, custom, t]);
 
   if (books && books.length === 0) return <>{fallback('empty')}</>;
   if (!value) return <>{fallback('loading')}</>;

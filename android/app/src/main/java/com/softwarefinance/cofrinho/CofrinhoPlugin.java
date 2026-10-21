@@ -1,5 +1,6 @@
 package com.softwarefinance.cofrinho;
 
+import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -24,7 +25,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class CofrinhoPlugin extends Plugin {
 
     private static final String[] WIDGET_KEYS = {
-        "month", "spentLabel", "spent", "incomeLabel", "income", "balanceLabel", "balance", "expenseButton", "incomeButton"
+        "month", "spentLabel", "spent", "incomeLabel", "income", "balanceLabel", "balance", "expenseButton", "incomeButton", "categoriesJson"
     };
 
     @PluginMethod
@@ -75,7 +76,8 @@ public class CofrinhoPlugin extends Plugin {
             Context context = getContext();
             AppWidgetManager manager = AppWidgetManager.getInstance(context);
             if (manager.isRequestPinAppWidgetSupported()) {
-                Class<?> provider = "summary".equals(call.getString("kind")) ? SummaryWidget.class : QuickAddWidget.class;
+                String kind = call.getString("kind", "quick");
+                Class<?> provider = "summary".equals(kind) ? SummaryWidget.class : "entry".equals(kind) ? QuickEntryWidget.class : QuickAddWidget.class;
                 requested = manager.requestPinAppWidget(new ComponentName(context, provider), null, null);
             }
         }
@@ -94,6 +96,30 @@ public class CofrinhoPlugin extends Plugin {
         editor.apply();
         WidgetRenderer.refreshAll(context);
         call.resolve();
+    }
+
+    /** Closes the mini screen (QuickAddActivity); does nothing in the main app window. */
+    @PluginMethod
+    public void closeQuickAdd(PluginCall call) {
+        Activity activity = getActivity();
+        call.resolve();
+        if (activity instanceof QuickAddActivity) activity.runOnUiThread(activity::finish);
+    }
+
+    /** Opens the main app at a cofrinho:// link and, from the mini screen, closes it. */
+    @PluginMethod
+    public void openApp(PluginCall call) {
+        String url = call.getString("url", "cofrinho://");
+        if (!url.startsWith("cofrinho://")) {
+            call.reject("Unsupported link");
+            return;
+        }
+        Activity activity = getActivity();
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url), activity, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        activity.startActivity(intent);
+        call.resolve();
+        if (activity instanceof QuickAddActivity) activity.runOnUiThread(activity::finish);
     }
 
     private static int shortcutIcon(String icon) {

@@ -18,6 +18,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.2.0',
+    date: '2026-10-21',
+    title: { 'pt-BR': 'Cadastro pelo widget', en: 'Add from the widget' },
+    changes: [
+      { kind: 'improvement', text: { 'pt-BR': 'Widget "Cadastro rápido" (3×2, 6 blocos) com Despesa, Receita e as 3 categorias que você mais usa.', en: '"Quick entry" widget (3×2, 6 cells) with Expense, Income and your 3 most used categories.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Os botões dos widgets abrem uma mini tela por cima da tela inicial: valor, categoria e conta, sem abrir o app. Ao salvar, ela fecha e o widget se atualiza.', en: 'Widget buttons open a mini screen over the home screen: amount, category and account, without opening the app. It closes after saving and the widget refreshes.' } },
+      { kind: 'improvement', text: { 'pt-BR': '"Mais opções no app" leva o que você digitou para o cadastro completo (tags, anexos, parcelas).', en: '"More options in the app" carries what you typed to the full form (tags, attachments, installments).' } },
+    ],
+  },
+  {
     version: '5.1.0',
     date: '2026-10-20',
     title: { 'pt-BR': 'Novidades da atualização', en: 'Update notes' },

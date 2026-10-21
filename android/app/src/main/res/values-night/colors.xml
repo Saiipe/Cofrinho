@@ -8,4 +8,5 @@
     <color name="widget_expense_fg">#F87171</color>
     <color name="widget_income_bg">#123024</color>
     <color name="widget_income_fg">#34D399</color>
+    <color name="widget_chip_bg">#1C242E</color>
 </resources>

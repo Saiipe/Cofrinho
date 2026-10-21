@@ -20,4 +20,6 @@
     <string name="shortcut_income_long">Registrar nova receita</string>
     <string name="shortcut_search">Buscar</string>
     <string name="shortcut_search_long">Buscar lançamentos</string>
+    <string name="widget_entry_label">Cadastro rápido</string>
+    <string name="widget_entry_description">Lance despesas e receitas numa mini tela, sem abrir o app</string>
 </resources>

@@ -878,7 +878,7 @@ export const ptBR = {
   'goals.icon': 'Ícone',
   'me.goals': 'Metas',
   'widgets.title': 'Widgets',
-  'widgets.hint': 'Coloque um widget na tela inicial do celular para lançar despesas e receitas com um toque.',
+  'widgets.hint': 'Coloque um widget na tela inicial do celular: os botões abrem uma mini tela por cima da tela inicial para lançar sem abrir o app.',
   'widgets.quick': 'Lançamento rápido',
   'widgets.quickHint': 'Botões de despesa e receita (2×1)',
   'widgets.summary': 'Resumo do mês',
@@ -904,6 +904,14 @@ export const ptBR = {
   'changelog.see': 'Ver todas as versões',
   'changelog.gotIt': 'Entendi',
   'changelog.since': 'O que mudou desde a versão {version}, que você usava:',
+  'quick.title': 'Lançamento rápido',
+  'quick.saved': 'Salvo!',
+  'quick.moreOptions': 'Mais opções no app',
+  'quick.more': 'Mais…',
+  'quick.pickCategory': 'Escolha a categoria',
+  'quick.splitBook': 'Livros divididos são lançados no app, com quem pagou e a divisão.',
+  'widgets.entry': 'Cadastro rápido',
+  'widgets.entryHint': 'Abre uma mini tela para lançar sem abrir o app (3×2, 6 blocos)',
 } as const;
 
 export type MessageKey = keyof typeof ptBR;

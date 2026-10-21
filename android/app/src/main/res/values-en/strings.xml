@@ -16,4 +16,6 @@
     <string name="shortcut_income_long">Add new income</string>
     <string name="shortcut_search">Search</string>
     <string name="shortcut_search_long">Search records</string>
+    <string name="widget_entry_label">Quick entry</string>
+    <string name="widget_entry_description">Add expenses and income in a mini screen, without opening the app</string>
 </resources>
