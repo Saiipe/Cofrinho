@@ -158,3 +158,8 @@ export const BOOK_COLORS = ['#0f766e', '#2563eb', '#7c3aed', '#db2777', '#ea580c
 export const INCOME_HINTS = ['recebi', 'ganhei', 'receita', 'entrada', 'renda', 'recebimento', 'received', 'earned', 'income', 'got paid', 'cobrei', 'recibi', 'gane', 'ingreso'];
 
 export const NOTE_MAX = 60;
+
+/** Longer free text ("Observações") of a record. */
+export const DETAILS_MAX = 1000;
+
+export const TAG_NAME_MAX = 24;

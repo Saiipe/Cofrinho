@@ -8,6 +8,8 @@ import { loadRateTable, lookupRate } from './rates';
 export type ScheduleInput = Omit<Schedule, 'id' | 'runCount' | 'lastRunDate' | 'status' | 'createdAt' | 'updatedAt'> & {
   id?: ID;
   paused: boolean;
+  /** New plans only: also record the dates between the start date and today. */
+  backfill?: boolean;
 };
 
 export async function saveSchedule(input: ScheduleInput, today: DayKey = todayKey()): Promise<ID> {
@@ -17,7 +19,7 @@ export async function saveSchedule(input: ScheduleInput, today: DayKey = todayKe
     const rule = { frequency: input.frequency, startDate: input.startDate };
     let lastRunDate: DayKey | null;
     if (!previous) {
-      lastRunDate = initialLastRun(rule, today);
+      lastRunDate = input.backfill ? null : initialLastRun(rule, today);
     } else if (previous.frequency !== input.frequency || previous.startDate !== input.startDate || previous.totalCount !== input.totalCount) {
       lastRunDate = recomputeLastRun(rule, previous.lastRunDate, today);
     } else {
@@ -25,7 +27,7 @@ export async function saveSchedule(input: ScheduleInput, today: DayKey = todayKe
     }
     const runCount = previous?.runCount ?? 0;
     const requested = input.paused ? 'paused' : previous?.status === 'completed' ? 'completed' : 'active';
-    const { paused: _paused, id: _id, ...fields } = input;
+    const { paused: _paused, id: _id, backfill: _backfill, ...fields } = input;
     const schedule: Schedule = {
       ...fields,
       name: input.name.trim(),
@@ -106,6 +108,7 @@ export async function runDueSchedules(now: number = Date.now()): Promise<Schedul
           toAccountId: toAccount?.id ?? null,
           note: schedule.note || schedule.name,
           photoIds: [],
+          ...(schedule.tagIds?.length ? { tagIds: schedule.tagIds } : {}),
           scheduleId: schedule.id,
           createdAt: stamp,
           updatedAt: stamp,

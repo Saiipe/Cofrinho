@@ -76,6 +76,14 @@ export interface Account {
   excludeFromTotals: boolean;
   isDefault: boolean;
   note: string;
+  /** COMPE code of the bank/institution (see `data/banks`), when the account belongs to one. */
+  bankId?: string;
+  /** Credit cards: total limit in the account currency. */
+  creditLimit?: Minor;
+  /** Credit cards: day of the month the invoice closes (1–31, clamped to short months). */
+  closingDay?: number;
+  /** Credit cards: day of the month the invoice is due (1–31). */
+  dueDay?: number;
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -132,11 +140,60 @@ export interface Transaction {
   /** Transfers: amount arriving in the destination account, in its currency. */
   toAccountAmount: Minor;
   note: string;
+  /** Longer free text ("Observações"), shown on the detail screen. */
+  details?: string;
   photoIds: ID[];
+  tagIds?: ID[];
   split?: SplitData;
   scheduleId?: ID;
+  /** One installment of a credit card purchase split over several months. */
+  installment?: Installment;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface Installment {
+  /** Shared by every installment of the same purchase. */
+  groupId: ID;
+  /** 1-based position. */
+  index: number;
+  count: number;
+}
+
+/** Free label attached to records, across categories ("viagem", "trabalho"…). */
+export interface Tag {
+  id: ID;
+  bookId: ID;
+  name: string;
+  color: string;
+  order: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Savings goal ("meta"): money put aside step by step until the target is reached. */
+export interface Goal {
+  id: ID;
+  bookId: ID;
+  name: string;
+  icon: string;
+  color: string;
+  /** Target in the book currency. */
+  target: Minor;
+  targetDate: DayKey | null;
+  /** Deposits (positive) and withdrawals (negative), oldest first. */
+  entries: GoalEntry[];
+  archived: boolean;
+  order: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface GoalEntry {
+  id: ID;
+  date: number;
+  amount: Minor;
+  note: string;
 }
 
 /** Monthly budget. `categoryId: null` is the book's total budget. */
@@ -169,6 +226,7 @@ export interface Schedule {
   lastRunDate: DayKey | null;
   status: ScheduleStatus;
   note: string;
+  tagIds?: ID[];
   createdAt: number;
   updatedAt: number;
 }

@@ -5,12 +5,14 @@ import type {
   Budget,
   Category,
   CustomRate,
+  Goal,
   Member,
   NoteSuggestion,
   Photo,
   RateRow,
   Reminder,
   Schedule,
+  Tag,
   Transaction,
 } from '@/domain/types';
 
@@ -34,6 +36,8 @@ export class AppDatabase extends Dexie {
   rates!: EntityTable<RateRow, 'code'>;
   customRates!: EntityTable<CustomRate, 'id'>;
   kv!: EntityTable<KvRow, 'key'>;
+  tags!: EntityTable<Tag, 'id'>;
+  goals!: EntityTable<Goal, 'id'>;
 
   constructor(name = 'cofrinho') {
     super(name);
@@ -52,13 +56,19 @@ export class AppDatabase extends Dexie {
       customRates: 'id',
       kv: 'key',
     });
+    // 2.0: tags on records; 4.0: savings goals. Existing rows need no migration (new fields are optional).
+    this.version(2).stores({
+      transactions: 'id, bookId, [bookId+date], categoryId, accountId, toAccountId, scheduleId, createdAt, *tagIds',
+      tags: 'id, bookId',
+      goals: 'id, bookId',
+    });
   }
 }
 
 export const db = new AppDatabase();
 
 /** Tables that belong to a single book and are wiped with it. */
-export const BOOK_TABLES = ['members', 'accounts', 'categories', 'transactions', 'budgets', 'schedules', 'notes'] as const;
+export const BOOK_TABLES = ['members', 'accounts', 'categories', 'transactions', 'budgets', 'schedules', 'notes', 'tags', 'goals'] as const;
 
 export function newId(): string {
   return crypto.randomUUID();

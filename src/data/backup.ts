@@ -3,10 +3,11 @@ import { db } from './db';
 import { getSettings, updateSettings, type Settings } from './settings';
 
 export const BACKUP_FORMAT = 'cofrinho-backup';
-export const BACKUP_VERSION = 1;
+/** 2: adds tags and goals (older backups restore with both empty). */
+export const BACKUP_VERSION = 2;
 
 /** Tables copied verbatim into a backup. Lock configuration is device-specific and never exported. */
-const DATA_TABLES = ['books', 'members', 'accounts', 'categories', 'transactions', 'budgets', 'schedules', 'reminders', 'notes', 'rates', 'customRates'] as const;
+const DATA_TABLES = ['books', 'members', 'accounts', 'categories', 'transactions', 'budgets', 'schedules', 'reminders', 'notes', 'rates', 'customRates', 'tags', 'goals'] as const;
 type DataTable = (typeof DATA_TABLES)[number];
 
 /** kv entries that travel with a backup. */
@@ -59,7 +60,7 @@ export async function createBackup(options: { includePhotos: boolean }): Promise
     if (row) kv[key] = row.value;
   }
   const photos = options.includePhotos ? await Promise.all((await db.photos.toArray()).map(serializePhoto)) : [];
-  const { lastBackupAt: _ignored, ...settings } = await getSettings();
+  const { lastBackupAt: _ignored, lastSeenVersion: _seen, ...settings } = await getSettings();
   return { format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: Date.now(), tables, settings, kv, photos };
 }
 
@@ -126,7 +127,7 @@ export async function restoreBackup(backup: BackupPayload): Promise<void> {
     const current = await getSettings();
     const books = backup.tables.books as { id: string }[];
     const currentBookId = books.some((b) => b.id === backup.settings.currentBookId) ? backup.settings.currentBookId! : books[0]!.id;
-    await db.kv.put({ key: 'settings', value: { ...current, ...backup.settings, currentBookId, onboarded: true, lastBackupAt: current.lastBackupAt } });
+    await db.kv.put({ key: 'settings', value: { ...current, ...backup.settings, currentBookId, onboarded: true, lastBackupAt: current.lastBackupAt, lastSeenVersion: current.lastSeenVersion } });
   });
 }
 

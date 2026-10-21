@@ -1,26 +1,110 @@
-import type { Period } from '@/domain/dates';
-import { NOTE_MAX } from '@/domain/defaults';
-import type { ID, Transaction } from '@/domain/types';
+import { installmentDates, splitInstallments } from '@/domain/card';
+import { dayKey, type Period } from '@/domain/dates';
+import { DETAILS_MAX, NOTE_MAX } from '@/domain/defaults';
+import { SCHEDULE_NAME_MAX, statusForCount } from '@/domain/schedule';
+import type { Frequency, ID, Schedule, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 
 export type TransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> & { id?: ID };
 
+function clean(input: TransactionInput): TransactionInput {
+  const details = input.details?.trim().slice(0, DETAILS_MAX);
+  const tagIds = input.tagIds?.length ? [...new Set(input.tagIds)] : undefined;
+  return { ...input, note: input.note.trim().slice(0, NOTE_MAX), details: details || undefined, tagIds };
+}
+
 export async function saveTransaction(input: TransactionInput): Promise<Transaction> {
   const now = Date.now();
-  const note = input.note.trim().slice(0, NOTE_MAX);
+  const cleaned = clean(input);
   return db.transaction('rw', [db.transactions, db.photos, db.notes], async () => {
     const previous = input.id ? await db.transactions.get(input.id) : undefined;
-    const tx: Transaction = { ...input, note, id: previous?.id ?? newId(), createdAt: previous?.createdAt ?? now, updatedAt: now };
+    const tx: Transaction = { ...cleaned, id: previous?.id ?? newId(), createdAt: previous?.createdAt ?? now, updatedAt: now };
     await db.transactions.put(tx);
     if (previous) {
       const removed = previous.photoIds.filter((id) => !tx.photoIds.includes(id));
       if (removed.length) await db.photos.bulkDelete(removed);
     }
-    if (note && (tx.kind === 'expense' || tx.kind === 'income' || tx.kind === 'split_expense')) {
-      await rememberNote(tx.bookId, tx.categoryId, note);
+    if (tx.note && (tx.kind === 'expense' || tx.kind === 'income' || tx.kind === 'split_expense')) {
+      await rememberNote(tx.bookId, tx.categoryId, tx.note);
     }
     return tx;
   });
+}
+
+/**
+ * Records a purchase split into `count` monthly installments, each dated a month after the
+ * previous one. Photos stay on the first installment. Returns the first installment.
+ */
+export async function saveInstallments(input: TransactionInput, count: number): Promise<Transaction> {
+  if (count <= 1) return saveTransaction(input);
+  const now = Date.now();
+  const cleaned = clean(input);
+  const groupId = newId();
+  const dates = installmentDates(cleaned.date, count);
+  const amounts = splitInstallments(cleaned.amount, count);
+  const originals = splitInstallments(cleaned.originalAmount, count);
+  const accountAmounts = splitInstallments(cleaned.accountAmount, count);
+  const rows: Transaction[] = dates.map((date, i) => ({
+    ...cleaned,
+    id: newId(),
+    date,
+    amount: amounts[i]!,
+    originalAmount: originals[i]!,
+    accountAmount: accountAmounts[i]!,
+    photoIds: i === 0 ? cleaned.photoIds : [],
+    installment: { groupId, index: i + 1, count },
+    createdAt: now,
+    updatedAt: now,
+  }));
+  await db.transaction('rw', [db.transactions, db.notes], async () => {
+    await db.transactions.bulkAdd(rows);
+    if (cleaned.note && cleaned.kind === 'expense') await rememberNote(cleaned.bookId, cleaned.categoryId, cleaned.note);
+  });
+  return rows[0]!;
+}
+
+export interface RepeatRule {
+  frequency: Frequency;
+  /** Total runs including this first one; 0 = unlimited. */
+  totalCount: number;
+}
+
+/**
+ * Saves a record and makes it the first run of a recurring plan, so it shows up right away
+ * and the next ones follow automatically on their dates.
+ */
+export async function saveRecurringTransaction(input: TransactionInput, repeat: RepeatRule, name: string): Promise<Transaction> {
+  if (input.kind !== 'expense' && input.kind !== 'income' && input.kind !== 'transfer') return saveTransaction(input);
+  const tx = await saveTransaction(input);
+  const now = Date.now();
+  const startDate = dayKey(tx.date);
+  const schedule: Schedule = {
+    id: newId(),
+    bookId: tx.bookId,
+    name: name.trim().slice(0, SCHEDULE_NAME_MAX),
+    kind: input.kind,
+    categoryId: input.kind === 'transfer' ? null : tx.categoryId,
+    accountId: tx.accountId,
+    toAccountId: input.kind === 'transfer' ? tx.toAccountId : null,
+    frequency: repeat.frequency,
+    startDate,
+    amount: tx.originalAmount,
+    currency: tx.currency,
+    toAmount: input.kind === 'transfer' && tx.toAccountId ? tx.toAccountAmount : null,
+    totalCount: repeat.totalCount,
+    runCount: 1,
+    lastRunDate: startDate,
+    status: statusForCount('active', repeat.totalCount, 1),
+    note: tx.note,
+    tagIds: tx.tagIds,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.transaction('rw', [db.transactions, db.schedules], async () => {
+    await db.schedules.add(schedule);
+    await db.transactions.update(tx.id, { scheduleId: schedule.id });
+  });
+  return { ...tx, scheduleId: schedule.id };
 }
 
 export async function deleteTransaction(id: ID): Promise<void> {
@@ -32,11 +116,26 @@ export async function deleteTransaction(id: ID): Promise<void> {
   });
 }
 
+/** Deletes the installments of a purchase from `fromIndex` on (1 = all of them). */
+export async function deleteInstallmentGroup(bookId: ID, groupId: ID, fromIndex = 1): Promise<number> {
+  return db.transaction('rw', [db.transactions, db.photos], async () => {
+    const rows = await db.transactions
+      .where('bookId')
+      .equals(bookId)
+      .filter((tx) => tx.installment?.groupId === groupId && tx.installment.index >= fromIndex)
+      .toArray();
+    const photos = rows.flatMap((tx) => tx.photoIds);
+    if (photos.length) await db.photos.bulkDelete(photos);
+    await db.transactions.bulkDelete(rows.map((tx) => tx.id));
+    return rows.length;
+  });
+}
+
 /** Copies a record to now (keeping amounts and links); photos are not duplicated. */
 export async function duplicateTransaction(id: ID): Promise<Transaction | null> {
   const tx = await db.transactions.get(id);
   if (!tx) return null;
-  const { id: _omit, createdAt: _c, updatedAt: _u, ...rest } = tx;
+  const { id: _omit, createdAt: _c, updatedAt: _u, installment: _i, ...rest } = tx;
   return saveTransaction({ ...rest, date: Date.now(), photoIds: [], scheduleId: undefined });
 }
 

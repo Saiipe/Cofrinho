@@ -54,6 +54,8 @@ export interface Settings {
   onboarded: boolean;
   lastBackupAt: number | null;
   ratesUpdatedAt: number | null;
+  /** Version whose release notes were already shown; null for installs made before 5.1. */
+  lastSeenVersion: string | null;
 }
 
 const REGION_CURRENCY: Record<string, string> = {
@@ -97,6 +99,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
   lastBackupAt: null,
   ratesUpdatedAt: null,
+  lastSeenVersion: null,
 };
 
 const SETTINGS_KEY = 'settings';

@@ -16,6 +16,10 @@ export interface AccountInput {
   excludeFromTotals: boolean;
   isDefault: boolean;
   note: string;
+  bankId?: string;
+  creditLimit?: Minor;
+  closingDay?: number;
+  dueDay?: number;
 }
 
 export async function saveAccount(input: AccountInput): Promise<ID> {
@@ -34,6 +38,11 @@ export async function saveAccount(input: AccountInput): Promise<ID> {
       excludeFromTotals: input.excludeFromTotals,
       isDefault: input.isDefault,
       note: input.note.trim(),
+      bankId: input.bankId || undefined,
+      // Card fields only make sense on credit cards; switching type clears them.
+      creditLimit: input.type === 'credit' ? input.creditLimit : undefined,
+      closingDay: input.type === 'credit' ? input.closingDay : undefined,
+      dueDay: input.type === 'credit' ? input.dueDay : undefined,
       updatedAt: now,
     };
     if (input.id) {
