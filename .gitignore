@@ -31,3 +31,6 @@ Money-Tracker-*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Lista pessoal de melhorias (anotações do dono do projeto)
+melhorias.txt
