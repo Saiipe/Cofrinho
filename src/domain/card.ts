@@ -1,4 +1,4 @@
-import { addMonthsClamped, dayKey, daysInMonth, makeDayKey, parseDayKey, withDay } from './dates';
+import { addDays, addMonthsClamped, dayKey, daysInMonth, makeDayKey, parseDayKey, withDay } from './dates';
 import type { Account, DayKey, ID, Minor, Transaction } from './types';
 
 /**
@@ -59,6 +59,21 @@ export function cycleOf(day: DayKey, rule: CardRule): InvoiceCycle {
 export function shiftCycle(cycle: InvoiceCycle, delta: number, rule: CardRule): InvoiceCycle {
   const { year, month } = parseDayKey(cycle.close);
   return cycleClosingIn(year, month + delta, rule);
+}
+
+/**
+ * Invoices that can hold something bought before the card was added to the app: the open one and,
+ * until its due date, the one that already closed and is waiting to be paid.
+ */
+export function backlogInvoices(today: DayKey, rule: CardRule): { open: InvoiceCycle; closed: InvoiceCycle | null } {
+  const open = cycleOf(today, rule);
+  const previous = shiftCycle(open, -1, rule);
+  return { open, closed: today <= previous.due ? previous : null };
+}
+
+/** A day inside `cycle` to date a record with: today for the open invoice, else the day before it closed. */
+export function dayInCycle(cycle: InvoiceCycle, today: DayKey): DayKey {
+  return today >= cycle.start && today < cycle.close ? today : addDays(cycle.close, -1);
 }
 
 export function cardRule(account: Pick<Account, 'closingDay' | 'dueDay'>): CardRule | null {
