@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Touch and hold the launcher icon: quick actions (open cofrinho:// links handled in src/ui/app/Lifecycle.tsx). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_expense"
+        android:shortcutId="new_expense"
+        android:shortcutLongLabel="@string/shortcut_expense_long"
+        android:shortcutShortLabel="@string/shortcut_expense">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="cofrinho://tx/new?kind=expense"
+            android:targetClass="com.softwarefinance.cofrinho.MainActivity"
+            android:targetPackage="com.softwarefinance.cofrinho" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_income"
+        android:shortcutId="new_income"
+        android:shortcutLongLabel="@string/shortcut_income_long"
+        android:shortcutShortLabel="@string/shortcut_income">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="cofrinho://tx/new?kind=income"
+            android:targetClass="com.softwarefinance.cofrinho.MainActivity"
+            android:targetPackage="com.softwarefinance.cofrinho" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutId="search"
+        android:shortcutLongLabel="@string/shortcut_search_long"
+        android:shortcutShortLabel="@string/shortcut_search">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="cofrinho://search"
+            android:targetClass="com.softwarefinance.cofrinho.MainActivity"
+            android:targetPackage="com.softwarefinance.cofrinho" />
+    </shortcut>
+</shortcuts>

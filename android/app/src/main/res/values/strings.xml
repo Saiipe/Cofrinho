@@ -4,4 +4,20 @@
     <string name="title_activity_main">Cofrinho</string>
     <string name="package_name">com.softwarefinance.cofrinho</string>
     <string name="custom_url_scheme">com.softwarefinance.cofrinho</string>
+    <string name="widget_expense">Despesa</string>
+    <string name="widget_income">Receita</string>
+    <string name="widget_spent">Gastos</string>
+    <string name="widget_received">Receitas</string>
+    <string name="widget_balance">Saldo</string>
+    <string name="widget_no_data">—</string>
+    <string name="widget_quick_add_label">Lançamento rápido</string>
+    <string name="widget_summary_label">Resumo do mês</string>
+    <string name="widget_quick_add_description">Botões para lançar despesa ou receita</string>
+    <string name="widget_summary_description">Gastos, receitas e saldo do mês</string>
+    <string name="shortcut_expense">Nova despesa</string>
+    <string name="shortcut_expense_long">Registrar nova despesa</string>
+    <string name="shortcut_income">Nova receita</string>
+    <string name="shortcut_income_long">Registrar nova receita</string>
+    <string name="shortcut_search">Buscar</string>
+    <string name="shortcut_search_long">Buscar lançamentos</string>
 </resources>

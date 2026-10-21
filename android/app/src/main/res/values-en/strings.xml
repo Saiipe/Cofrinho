@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_expense">Expense</string>
+    <string name="widget_income">Income</string>
+    <string name="widget_spent">Spent</string>
+    <string name="widget_received">Income</string>
+    <string name="widget_balance">Balance</string>
+    <string name="widget_no_data">—</string>
+    <string name="widget_quick_add_label">Quick add</string>
+    <string name="widget_summary_label">Month summary</string>
+    <string name="widget_quick_add_description">Buttons to add an expense or income</string>
+    <string name="widget_summary_description">The month spending, income and balance</string>
+    <string name="shortcut_expense">New expense</string>
+    <string name="shortcut_expense_long">Add a new expense</string>
+    <string name="shortcut_income">New income</string>
+    <string name="shortcut_income_long">Add new income</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_search_long">Search records</string>
+</resources>
