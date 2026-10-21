@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight, CreditCard, Info, Plus, Scale, Settings2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CreditCard, History, Info, Plus, ReceiptText, Scale, Settings2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { bankById } from '@/data/banks';
+import { addCardBacklog, type CardBacklogItem } from '@/data/cards';
 import { accountBalances } from '@/domain/balances';
 import { buildInvoices, cardRule, cycleOf, shiftCycle, type CardInvoice, type InvoiceCycle, type InvoiceStatus } from '@/domain/card';
 import { parseDayKey, todayKey } from '@/domain/dates';
@@ -10,10 +11,12 @@ import { groupByDay } from '@/domain/stats';
 import type { Account, Transaction } from '@/domain/types';
 import type { MessageKey } from '@/i18n';
 import { useApp } from '../app/AppContext';
+import { useBook } from '../app/BookContext';
 import { useFormat } from '../hooks/useFormat';
 import { AccountIcon } from './banks';
 import { Meter } from './charts';
-import { InlineNotice } from './feedback';
+import { CardBacklogSheet, type BacklogMode } from './CardBacklog';
+import { InlineNotice, useFeedback } from './feedback';
 import { Badge, Button, Card, cx, IconButton } from './primitives';
 import { TransactionDayList } from './TransactionList';
 
@@ -63,8 +66,11 @@ export function CardLimit({ account, transactions }: { account: Account; transac
 /** Credit card view: limit, one invoice at a time, its purchases and the next invoices. */
 export function CardDetail({ account, transactions, onAdjust }: { account: Account; transactions: Transaction[]; onAdjust: () => void }) {
   const { t } = useApp();
+  const { book } = useBook();
   const format = useFormat();
+  const { toast } = useFeedback();
   const navigate = useNavigate();
+  const [backlogMode, setBacklogMode] = useState<BacklogMode | null>(null);
   const rule = cardRule(account);
   const today = todayKey();
   const [cycle, setCycle] = useState<InvoiceCycle | null>(() => (rule ? cycleOf(today, rule) : null));
@@ -74,6 +80,26 @@ export function CardDetail({ account, transactions, onAdjust }: { account: Accou
     const { year, month } = parseDayKey(`${key}-01`);
     return format.monthYear(year, month);
   };
+
+  // Purchases made before the card was in the app (installments still running, open invoice).
+  const addOld = async (item: CardBacklogItem) => {
+    const result = await addCardBacklog(book, account, [item], t('cards.balanceNote'));
+    if (result.skipped) toast(t('cards.backlogSkipped'), { tone: 'error' });
+    else toast(t('cards.backlogSaved', { count: result.created }), { tone: 'success' });
+  };
+  const backlog = (
+    <>
+      <div className="grid grid-cols-2 gap-2">
+        <Button size="sm" variant="ghost" icon={History} onClick={() => setBacklogMode('purchase')}>
+          {t('cards.oldPurchases')}
+        </Button>
+        <Button size="sm" variant="ghost" icon={ReceiptText} onClick={() => setBacklogMode('balance')}>
+          {t('cards.addBalance')}
+        </Button>
+      </div>
+      <CardBacklogSheet open={backlogMode !== null} onClose={() => setBacklogMode(null)} mode={backlogMode ?? 'purchase'} currency={account.currency} rule={rule} onAdd={(item) => void addOld(item)} />
+    </>
+  );
 
   const header = (
     <Card className="px-4 py-4">
@@ -104,6 +130,7 @@ export function CardDetail({ account, transactions, onAdjust }: { account: Accou
         <Button block variant="secondary" icon={Plus} onClick={() => navigate(`/tx/new?kind=expense&account=${account.id}`)}>
           {t('cards.newPurchase')}
         </Button>
+        {backlog}
       </div>
     );
   }
@@ -147,6 +174,7 @@ export function CardDetail({ account, transactions, onAdjust }: { account: Accou
               {t('cards.pay')}
             </Button>
           </div>
+          <div className="mt-2">{backlog}</div>
         </Card>
 
         {upcoming.length > 0 && (

@@ -1,4 +1,4 @@
-import { ArrowDown, CalendarDays, Calculator, Camera, ChevronDown, CreditCard, Hash, Mic, NotebookPen, Repeat, Shapes, Sparkles, Wallet, X } from 'lucide-react';
+import { ArrowDown, CalendarDays, Calculator, Camera, ChevronDown, CreditCard, Hash, Mic, NotebookPen, Repeat, Shapes, Sparkles, Wallet, X, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -23,6 +23,7 @@ import { useApp } from '../app/AppContext';
 import { useBackHandler } from '../app/back';
 import { useBook } from '../app/BookContext';
 import { AccountIcon } from '../components/banks';
+import { cardUsage } from '../components/CardDetail';
 import { useFeedback } from '../components/feedback';
 import { Keypad } from '../components/Keypad';
 import { useGoBack } from '../components/Page';
@@ -174,6 +175,10 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   const effectiveInstallments = canInstall ? installments : 1;
   const effectiveRepeat = canRepeat ? repeat : null;
   const rule = card ? cardRule(card) : null;
+  const cardTxs = useLiveQuery(
+    async () => (card ? [...(await db.transactions.where('accountId').equals(card.id).toArray()), ...(await db.transactions.where('toAccountId').equals(card.id).toArray())] : null),
+    [card?.id],
+  );
   const invoice = rule ? cycleOf(dayKey(date), rule) : null;
 
   const bookPreview = useMemo(() => {
@@ -330,8 +335,27 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   };
 
   const kindOptions = kinds.map((k) => ({ value: k, label: t(`kind.${k}` as MessageKey) }));
-  const tagLabel = tagIds.length ? `${t('tags.title')} · ${tagIds.length}` : t('tags.title');
   const invoiceMonth = invoice ? parseDayKey(invoice.due) : null;
+  const cardInfo =
+    card && cardTxs
+      ? [
+          card.creditLimit ? t('cards.availableShort', { amount: format.money(cardUsage(card, cardTxs).available ?? 0, card.currency) }) : null,
+          invoiceMonth ? t('cards.goesTo', { month: format.monthYearShort(invoiceMonth.year, invoiceMonth.month) }) : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : invoiceMonth
+        ? t('cards.goesTo', { month: format.monthYearShort(invoiceMonth.year, invoiceMonth.month) })
+        : '';
+  // Extra details as a fixed bar of equal buttons (no horizontal scroll, labels never cut off).
+  const tools: ToolProps[] = [
+    ...(canRepeat ? [{ id: 'repeat', icon: Repeat, label: repeat ? frequencyLabel(repeat.frequency, t) : t('tx.repeat'), active: Boolean(repeat), onClick: () => setSheet('repeat') }] : []),
+    ...(canInstall ? [{ id: 'installments', icon: CreditCard, label: installments > 1 ? `${installments}x` : t('cards.installments'), active: installments > 1, onClick: () => setSheet('installments') }] : []),
+    ...(existing?.installment ? [{ id: 'installment', icon: CreditCard, label: `${existing.installment.index}/${existing.installment.count}`, active: true }] : []),
+    { id: 'tags', icon: Hash, label: tagIds.length ? t('tags.count', { count: tagIds.length }) : t('tags.title'), active: tagIds.length > 0, onClick: () => setSheet('tags') },
+    { id: 'memo', icon: NotebookPen, label: t('tx.memo'), active: details.trim().length > 0, onClick: () => setSheet('memo') },
+    { id: 'photos', icon: Camera, label: photoIds.length ? t('tx.photoCount', { count: photoIds.length }) : t('tx.photos'), active: photoIds.length > 0, onClick: () => setSheet('photos') },
+  ];
 
   return (
     <div className="flex h-dvh flex-col bg-bg">
@@ -457,57 +481,36 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
             )}
           </p>
         )}
-        {invoiceMonth && <p className="px-4 pt-0.5 text-right text-xs text-muted">{t('cards.goesTo', { month: format.monthYearShort(invoiceMonth.year, invoiceMonth.month) })}</p>}
+        {cardInfo && (
+          <p className="truncate px-4 pt-0.5 text-right text-xs text-muted">
+            {card?.name} · {cardInfo}
+          </p>
+        )}
 
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-2.5 pb-1">
-          <Chip onClick={() => setSheet('date')}>
-            <CalendarDays className="size-4" aria-hidden />
-            {format.dayHeading(dayKey(date))} {format.time(date)}
+        <div className={cx('grid gap-2 px-4 pt-2.5', (kind === 'expense' || kind === 'income' || kind === 'split_expense') && 'grid-cols-2')}>
+          <Chip onClick={() => setSheet('date')} className="min-w-0 justify-start px-3">
+            <CalendarDays className="size-4 shrink-0" aria-hidden />
+            <span className="truncate">
+              {format.dayHeading(dayKey(date))} {format.time(date)}
+            </span>
           </Chip>
           {(kind === 'expense' || kind === 'income') && (
-            <Chip onClick={() => setSheet('account')} active={Boolean(account)}>
-              <Wallet className="size-4" aria-hidden />
-              {account?.name ?? t('tx.noAccount')}
+            <Chip onClick={() => setSheet('account')} active={Boolean(account)} className="min-w-0 justify-start px-3">
+              {account?.type === 'credit' ? <CreditCard className="size-4 shrink-0" aria-hidden /> : <Wallet className="size-4 shrink-0" aria-hidden />}
+              <span className="truncate">{account?.name ?? t('tx.noAccount')}</span>
             </Chip>
           )}
           {kind === 'split_expense' && (
-            <Chip onClick={() => setSheet('category')} active={Boolean(categoryId)}>
-              <Shapes className="size-4" aria-hidden />
-              {categoryId ? categoryName(categoryId) : t('common.category')}
-            </Chip>
-          )}
-          {canInstall && (
-            <Chip onClick={() => setSheet('installments')} active={installments > 1}>
-              <CreditCard className="size-4" aria-hidden />
-              {installments > 1 ? `${installments}x` : t('cards.inFull')}
-            </Chip>
-          )}
-          {existing?.installment && (
-            <Chip active>
-              <CreditCard className="size-4" aria-hidden />
-              {t('tx.installment')} {existing.installment.index}/{existing.installment.count}
-            </Chip>
-          )}
-          {canRepeat && (
-            <Chip onClick={() => setSheet('repeat')} active={Boolean(repeat)}>
-              <Repeat className="size-4" aria-hidden />
-              {repeat ? frequencyLabel(repeat.frequency, t) : t('tx.repeat')}
+            <Chip onClick={() => setSheet('category')} active={Boolean(categoryId)} className="min-w-0 justify-start px-3">
+              <Shapes className="size-4 shrink-0" aria-hidden />
+              <span className="truncate">{categoryId ? categoryName(categoryId) : t('common.category')}</span>
             </Chip>
           )}
         </div>
-        <div className="flex gap-2 px-4 pt-1.5">
-          <Chip onClick={() => setSheet('tags')} active={tagIds.length > 0} className="min-w-0 flex-auto justify-center px-2.5">
-            <Hash className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{tagLabel}</span>
-          </Chip>
-          <Chip onClick={() => setSheet('memo')} active={details.trim().length > 0} className="min-w-0 flex-auto justify-center px-2.5">
-            <NotebookPen className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{t('tx.memo')}</span>
-          </Chip>
-          <Chip onClick={() => setSheet('photos')} active={photoIds.length > 0} className="min-w-0 flex-auto justify-center px-2.5">
-            <Camera className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{photoIds.length > 0 ? `${t('tx.photos')} · ${photoIds.length}` : t('tx.photos')}</span>
-          </Chip>
+        <div className="grid gap-1.5 px-4 pt-2" style={{ gridTemplateColumns: `repeat(${tools.length}, minmax(0, 1fr))` }}>
+          {tools.map((tool) => (
+            <ToolButton key={tool.id} {...tool} dense={tools.length > 4} />
+          ))}
         </div>
 
         {notes && notes.length > 0 && (
@@ -549,6 +552,7 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       <AccountPickerSheet
         open={sheet === 'account'}
         onClose={() => setSheet(null)}
+        title={kind === 'income' ? t('tx.receivedIn') : t('tx.paidWith')}
         value={accountId}
         onSelect={(a) => {
           setAccountId(a?.id ?? null);
@@ -602,6 +606,34 @@ function AccountButton({ label, accountId, onClick }: { label: string; accountId
         <span className="block truncate font-semibold">{selected ? selected.name : t('tx.chooseAccount')}</span>
       </span>
       {selected && <span className="text-sm text-muted">{selected.currency}</span>}
+    </button>
+  );
+}
+
+interface ToolProps {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  active: boolean;
+  onClick?: () => void;
+}
+
+function ToolButton({ icon: Icon, label, active, onClick, dense }: ToolProps & { dense?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      aria-pressed={active}
+      className={cx(
+        'flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border leading-none font-medium transition-colors disabled:cursor-default',
+        // Five buttons on a narrow phone: slightly smaller labels so "Observações" still fits.
+        dense ? 'px-0.5 text-[0.62rem]' : 'px-1 text-[0.68rem]',
+        active ? 'border-primary bg-primary-soft text-primary' : 'border-line bg-surface text-muted active:bg-surface-2',
+      )}
+    >
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <span className="w-full truncate text-center">{label}</span>
     </button>
   );
 }

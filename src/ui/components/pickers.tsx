@@ -1,6 +1,10 @@
-import { Check, ChevronLeft, ChevronRight, Search, Settings2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, CreditCard, Search, Settings2 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { bookTransactions } from '@/data/transactions';
+import { accountBalances } from '@/domain/balances';
+import { accountTypeLabel } from '@/i18n/labels';
 import { calendarWeeks, dayKey, parseDayKey, todayKey, weekdayOrder, withDay } from '@/domain/dates';
 import { currencySymbol } from '@/domain/money';
 import type { Account, Category, CategoryKind, DayKey, ID } from '@/domain/types';
@@ -202,32 +206,46 @@ export function AccountPickerSheet({
   title?: string;
 }) {
   const t = useT();
-  const { accounts } = useBook();
+  const { book, accounts } = useBook();
+  const format = useFormat();
   const options = accounts.filter((a) => a.id !== exclude);
+  const cards = options.filter((a) => a.type === 'credit');
+  const others = options.filter((a) => a.type !== 'credit');
+  // Balances only while the sheet is open, to show each card's available limit.
+  const transactions = useLiveQuery(async () => (open && cards.length ? bookTransactions(book.id) : null), [open, book.id, cards.length]);
+  const balances = transactions ? accountBalances(cards, transactions) : null;
   const choose = (account: Account | null) => {
     onSelect(account);
     onClose();
   };
+  const hint = (account: Account) => {
+    if (account.type !== 'credit') return account.currency === book.currency ? accountTypeLabel(account.type, t) : account.currency;
+    const balance = balances?.get(account.id);
+    if (!account.creditLimit || balance === undefined) return accountTypeLabel(account.type, t);
+    return t('cards.availableShort', { amount: format.money(account.creditLimit - Math.max(0, -balance), account.currency) });
+  };
+  const row = (account: Account) => <PickerRow key={account.id} selected={account.id === value} onClick={() => choose(account)} leading={<AccountIcon account={account} />} label={account.name} hint={hint(account)} />;
+  const heading = (text: string) => <p className="px-5 pt-3 pb-1 text-xs font-semibold tracking-wide text-muted uppercase">{text}</p>;
   return (
     <Sheet open={open} onClose={onClose} title={title ?? t('tx.chooseAccount')}>
       <div className="pb-3">
         {allowNone && (
           <PickerRow selected={value === null} onClick={() => choose(null)} leading={<EntityIcon icon="circle-ellipsis" color="#8b93a1" mono={false} />} label={t('tx.noAccount')} />
         )}
-        {options.map((account) => (
-          <PickerRow
-            key={account.id}
-            selected={account.id === value}
-            onClick={() => choose(account)}
-            leading={<AccountIcon account={account} />}
-            label={account.name}
-            hint={account.currency}
-          />
-        ))}
-        <Link to="/accounts/new" onClick={onClose} className="mx-4 mt-2 flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-primary active:bg-primary-soft">
-          <Settings2 className="size-4" aria-hidden />
-          {t('accounts.new')}
-        </Link>
+        {cards.length > 0 && others.length > 0 && heading(t('accounts.groupCards'))}
+        {cards.map(row)}
+        {cards.length > 0 && others.length > 0 && heading(t('accounts.groupAccounts'))}
+        {others.map(row)}
+        <div className="mx-4 mt-2 grid grid-cols-2 gap-2">
+          <Link to="/accounts/new" onClick={onClose} className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-primary active:bg-primary-soft">
+            <Settings2 className="size-4" aria-hidden />
+            {t('accounts.new')}
+          </Link>
+          <Link to="/accounts/new?type=credit" onClick={onClose} className="flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-primary active:bg-primary-soft">
+            <CreditCard className="size-4" aria-hidden />
+            {t('cards.new.short')}
+          </Link>
+        </div>
       </div>
     </Sheet>
   );

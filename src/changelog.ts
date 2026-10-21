@@ -18,6 +18,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.3.0',
+    date: '2026-10-21',
+    title: { 'pt-BR': 'Cadastro mais claro', en: 'Clearer forms' },
+    changes: [
+      { kind: 'improvement', text: { 'pt-BR': 'Cadastro de conta personalizado para cada tipo (cartão, conta, carteira, investimento, a receber, a pagar), com explicações e as opções raras em "Mais opções".', en: 'Account form tailored to each type (card, bank, wallet, investment, receivable, payable), with explanations and rare options under "More options".' } },
+      { kind: 'feature', text: { 'pt-BR': 'Ao cadastrar um cartão, lance as compras que já estão nele: parceladas (só as parcelas que faltam) e o valor da fatura. As compras aparecem nas suas despesas e nas faturas certas.', en: 'When adding a card, record what is already on it: installments (only the ones left) and the invoice amount. Purchases show up in your expenses and in the right invoices.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'No cadastro de despesa, "Pago com" separa cartões e contas e mostra o limite disponível do cartão.', en: 'In the expense form, "Paid with" separates cards from accounts and shows the available card limit.' } },
+      { kind: 'fix', text: { 'pt-BR': 'Repetir, Parcelas, Tags, Observações e Anexos viraram uma barra de botões fixa: nada mais sai da tela no celular.', en: 'Repeat, Installments, Tags, Details and Attachments became a fixed button bar: nothing goes off screen on phones anymore.' } },
+    ],
+  },
+  {
     version: '5.2.0',
     date: '2026-10-21',
     title: { 'pt-BR': 'Cadastro pelo widget', en: 'Add from the widget' },
