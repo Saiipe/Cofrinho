@@ -38,6 +38,7 @@ export default defineConfig({
         shortcuts: [
           { name: 'Nova despesa', short_name: 'Despesa', url: '/tx/new?kind=expense', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
           { name: 'Nova receita', short_name: 'Receita', url: '/tx/new?kind=income', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Buscar', short_name: 'Buscar', url: '/search', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
         ],
       },
       workbox: {

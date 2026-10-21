@@ -26,7 +26,7 @@ const MAX_DAYS = 366;
 
 export default function ExportScreen() {
   const { settings, t, locale } = useApp();
-  const { book, categoryMap, accountMap, memberMap } = useBook();
+  const { book, categoryMap, accountMap, memberMap, tagMap } = useBook();
   const format = useFormat();
   const { toast } = useFeedback();
   const today = todayKey();
@@ -56,7 +56,7 @@ export default function ExportScreen() {
     }
     setBusy(true);
     try {
-      const ctx = { book, categories: categoryMap, accounts: accountMap, members: memberMap, t, locale, money: format.moneyFormat, range: { start, end } };
+      const ctx = { book, categories: categoryMap, accounts: accountMap, members: memberMap, tags: tagMap, t, locale, money: format.moneyFormat, range: { start, end } };
       const rows = buildExportRows(txs, ctx);
       const data = kind === 'xlsx' ? exportXlsx(rows, ctx) : kind === 'csv' ? exportCsv(rows, ctx, format.decimalSeparator) : kind === 'json' ? exportJson(rows, ctx) : exportHtml(rows, ctx);
       const base = `cofrinho-${book.name.normalize('NFD').replace(/[^\w-]+/g, '-').replace(/-+/g, '-').toLowerCase()}`;

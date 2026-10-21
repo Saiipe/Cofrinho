@@ -2,6 +2,8 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import { createBrowserRouter, Navigate, Outlet, ScrollRestoration } from 'react-router';
 import { BottomNav } from './app/BottomNav';
 import { Lifecycle } from './app/Lifecycle';
+import { LongPressTooltip } from './components/LongPressTooltip';
+import { UpdateNotes } from './components/ReleaseNotes';
 import { PageFallback } from './components/Splash';
 import HomeScreen from './screens/HomeScreen';
 import TransactionFormScreen from './screens/TransactionFormScreen';
@@ -18,6 +20,8 @@ function RootLayout() {
         <Outlet />
       </Suspense>
       <Lifecycle />
+      <LongPressTooltip />
+      <UpdateNotes />
       <ScrollRestoration />
     </>
   );
@@ -70,6 +74,14 @@ export const router = createBrowserRouter([
       { path: 'import', element: page(() => import('./screens/ImportScreen')) },
       { path: 'export', element: page(() => import('./screens/ExportScreen')) },
       { path: 'backup', element: page(() => import('./screens/BackupScreen')) },
+      { path: 'tags', element: page(() => import('./screens/TagsScreen')) },
+      { path: 'cards', element: page(() => import('./screens/CardsScreen')) },
+      { path: 'goals', element: page(() => import('./screens/GoalsScreen')) },
+      { path: 'goals/new', element: page(() => import('./screens/GoalFormScreen')) },
+      { path: 'goals/:id', element: page(() => import('./screens/GoalDetailScreen')) },
+      { path: 'goals/:id/edit', element: page(() => import('./screens/GoalFormScreen')) },
+      { path: 'shortcuts', element: page(() => import('./screens/ShortcutsScreen')) },
+      { path: 'whats-new', element: page(() => import('./screens/WhatsNewScreen')) },
       { path: 'settings', element: page(() => import('./screens/SettingsScreen')) },
       { path: 'settings/lock', element: page(() => import('./screens/LockSettingsScreen')) },
       { path: 'garden', element: page(() => import('./screens/GardenScreen')) },

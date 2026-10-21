@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { deleteAccount, saveAccount } from '@/data/accounts';
+import { bankById } from '@/data/banks';
 import { db } from '@/data/db';
 import { ACCOUNT_TYPES, isLiability } from '@/domain/balances';
 import { ACCOUNT_TYPE_STYLE, CATEGORY_COLORS } from '@/domain/defaults';
@@ -10,11 +11,12 @@ import { accountTypeLabel } from '@/i18n/labels';
 import { useApp } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
 import { AmountSheet } from '../components/AmountSheet';
-import { EntityIcon } from '../components/EntityIcon';
+import { AccountIcon, BankLogo, BankPickerSheet } from '../components/banks';
 import { useFeedback } from '../components/feedback';
 import { Page, useGoBack } from '../components/Page';
 import { ColorSwatches, CurrencyPickerSheet, IconPickerSheet } from '../components/pickers';
 import { Button, Card, cx, Divider, Row, SwitchRow, TextField } from '../components/primitives';
+import { Sheet } from '../components/Sheet';
 import { currencyName } from '../currencies';
 import { iconFor } from '../icons';
 import { useFormat } from '../hooks/useFormat';
@@ -32,11 +34,18 @@ function AccountForm({ existing }: { existing: Account | null }) {
   const format = useFormat();
   const { confirm, toast } = useFeedback();
   const navigate = useNavigate();
-  const goBack = useGoBack('/accounts');
+  const [params] = useSearchParams();
+  const requestedType = params.get('type') as AccountType | null;
+  const initialType: AccountType = existing?.type ?? (requestedType && ACCOUNT_TYPES.includes(requestedType) ? requestedType : 'debit');
+  const goBack = useGoBack(initialType === 'credit' ? '/cards' : '/accounts');
   const [name, setName] = useState(existing?.name ?? '');
-  const [type, setType] = useState<AccountType>(existing?.type ?? 'debit');
-  const [icon, setIcon] = useState(existing?.icon ?? ACCOUNT_TYPE_STYLE.debit.icon);
-  const [color, setColor] = useState(existing?.color ?? ACCOUNT_TYPE_STYLE.debit.color);
+  const [type, setType] = useState<AccountType>(initialType);
+  const [icon, setIcon] = useState(existing?.icon ?? ACCOUNT_TYPE_STYLE[initialType].icon);
+  const [color, setColor] = useState(existing?.color ?? ACCOUNT_TYPE_STYLE[initialType].color);
+  const [bankId, setBankId] = useState<string | null>(existing?.bankId ?? null);
+  const [creditLimit, setCreditLimit] = useState(existing?.creditLimit ?? 0);
+  const [closingDay, setClosingDay] = useState<number | null>(existing?.closingDay ?? null);
+  const [dueDay, setDueDay] = useState<number | null>(existing?.dueDay ?? null);
   const [styleTouched, setStyleTouched] = useState(Boolean(existing));
   const [currency, setCurrency] = useState(existing?.currency ?? book.currency);
   const [initial, setInitial] = useState(existing?.initialBalance ?? 0);
@@ -44,7 +53,8 @@ function AccountForm({ existing }: { existing: Account | null }) {
   const [isDefault, setIsDefault] = useState(existing?.isDefault ?? false);
   const [note, setNote] = useState(existing?.note ?? '');
   const [error, setError] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<'icon' | 'currency' | 'balance' | null>(null);
+  const [sheet, setSheet] = useState<'icon' | 'currency' | 'balance' | 'bank' | 'limit' | 'closing' | 'due' | null>(null);
+  const bank = bankById(bankId);
   const liability = isLiability(type);
 
   const chooseType = (next: AccountType) => {
@@ -62,7 +72,23 @@ function AccountForm({ existing }: { existing: Account | null }) {
       setError(t('accounts.nameRequired'));
       return;
     }
-    await saveAccount({ id: existing?.id, bookId: book.id, name, type, icon, color, currency, initialBalance: initial, excludeFromTotals: exclude, isDefault, note });
+    await saveAccount({
+      id: existing?.id,
+      bookId: book.id,
+      name,
+      type,
+      icon,
+      color,
+      currency,
+      initialBalance: initial,
+      excludeFromTotals: exclude,
+      isDefault,
+      note,
+      bankId: bankId ?? undefined,
+      creditLimit: creditLimit > 0 ? creditLimit : undefined,
+      closingDay: closingDay ?? undefined,
+      dueDay: dueDay ?? undefined,
+    });
     toast(t('common.saved'), { tone: 'success' });
     goBack();
   };
@@ -80,7 +106,7 @@ function AccountForm({ existing }: { existing: Account | null }) {
       <div className="space-y-5 px-4">
         <div className="flex items-center gap-3 pt-2">
           <button type="button" onClick={() => setSheet('icon')} aria-label={t('accounts.icon')}>
-            <EntityIcon icon={icon} color={color} size="xl" mono={false} />
+            <AccountIcon account={{ icon, color, bankId: bankId ?? undefined }} size="xl" mono={false} />
           </button>
           <TextField className="flex-1" label={t('accounts.name')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('accounts.namePlaceholder')} error={error} maxLength={40} />
         </div>
@@ -105,6 +131,24 @@ function AccountForm({ existing }: { existing: Account | null }) {
             })}
           </div>
         </div>
+
+        <Card className="overflow-hidden">
+          <Row leading={bank ? <BankLogo bank={bank} /> : undefined} title={t('accounts.bank')} subtitle={bank?.name} trailing={bank ? undefined : t('banks.none')} onClick={() => setSheet('bank')} chevron />
+        </Card>
+
+        {type === 'credit' && (
+          <section>
+            <p className="mb-2 text-sm font-medium text-muted">{t('accounts.cardDetails')}</p>
+            <Card className="overflow-hidden">
+              <Row title={t('cards.limit')} trailing={<span className="font-semibold text-fg tabular">{creditLimit > 0 ? format.money(creditLimit, currency) : t('cards.dayNotSet')}</span>} onClick={() => setSheet('limit')} chevron />
+              <Divider />
+              <Row title={t('cards.closingDay')} trailing={closingDay ? t('cards.dayValue', { day: closingDay }) : t('cards.dayNotSet')} onClick={() => setSheet('closing')} chevron />
+              <Divider />
+              <Row title={t('cards.dueDay')} trailing={dueDay ? t('cards.dayValue', { day: dueDay }) : t('cards.dayNotSet')} onClick={() => setSheet('due')} chevron />
+            </Card>
+            <p className="mt-1.5 px-1 text-xs text-muted">{closingDay ? t('cards.bestDay', { day: closingDay }) : t('cards.setupHint')}</p>
+          </section>
+        )}
 
         <div>
           <p className="mb-2 text-sm font-medium text-muted">{t('categories.color')}</p>
@@ -154,6 +198,27 @@ function AccountForm({ existing }: { existing: Account | null }) {
         }}
       />
       <CurrencyPickerSheet open={sheet === 'currency'} onClose={() => setSheet(null)} value={currency} onSelect={setCurrency} />
+      <BankPickerSheet
+        open={sheet === 'bank'}
+        onClose={() => setSheet(null)}
+        value={bankId}
+        onSelect={(picked) => {
+          setBankId(picked?.id ?? null);
+          if (picked && !name.trim()) setName(picked.name.slice(0, 40));
+        }}
+      />
+      <AmountSheet
+        open={sheet === 'limit'}
+        onClose={() => setSheet(null)}
+        title={t('cards.limit')}
+        currency={currency}
+        initial={creditLimit || null}
+        onSave={setCreditLimit}
+        clearLabel={creditLimit ? t('common.clear') : undefined}
+        onClear={() => setCreditLimit(0)}
+      />
+      <DaySheet open={sheet === 'closing'} onClose={() => setSheet(null)} title={t('cards.closingDay')} value={closingDay} onChange={setClosingDay} />
+      <DaySheet open={sheet === 'due'} onClose={() => setSheet(null)} title={t('cards.dueDay')} value={dueDay} onChange={setDueDay} />
       <AmountSheet
         open={sheet === 'balance'}
         onClose={() => setSheet(null)}
@@ -164,5 +229,27 @@ function AccountForm({ existing }: { existing: Account | null }) {
         onSave={(value) => setInitial(liability ? -value : value)}
       />
     </Page>
+  );
+}
+
+function DaySheet({ open, onClose, title, value, onChange }: { open: boolean; onClose: () => void; title: string; value: number | null; onChange: (day: number) => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title={title}>
+      <div className="grid grid-cols-7 gap-1.5 px-4 pb-5">
+        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+          <button
+            key={day}
+            type="button"
+            onClick={() => {
+              onChange(day);
+              onClose();
+            }}
+            className={cx('h-11 rounded-xl text-[0.95rem] font-medium', value === day ? 'bg-primary text-primary-fg' : 'bg-surface-2 active:bg-line')}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+    </Sheet>
   );
 }

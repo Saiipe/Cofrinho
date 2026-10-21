@@ -1,4 +1,4 @@
-import { ArrowRightLeft, HandCoins, ImageIcon, ReceiptText, Repeat, Scale } from 'lucide-react';
+import { ArrowRightLeft, HandCoins, ImageIcon, NotebookPen, ReceiptText, Repeat, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { DayGroup } from '@/domain/stats';
 import type { Transaction } from '@/domain/types';
@@ -8,6 +8,7 @@ import { useFormat } from '../hooks/useFormat';
 import { TxAmount } from './Amount';
 import { CategoryIcon } from './EntityIcon';
 import { cx } from './primitives';
+import { useTagNames } from './tags';
 
 function SystemIcon({ icon: Icon }: { icon: typeof ArrowRightLeft }) {
   return (
@@ -24,6 +25,7 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
   const category = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
   const accountName = (id: string | null) => (id ? (accountMap.get(id)?.name ?? t('common.unknownAccount')) : null);
   const memberName = (id: string | undefined) => (id ? (memberMap.get(id)?.name ?? '?') : '?');
+  const tagNames = useTagNames(tx.tagIds);
 
   let leading = <CategoryIcon category={category} />;
   let title: string;
@@ -53,6 +55,8 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
       title = categoryName(category);
       details = [tx.note || null, accountName(tx.accountId)];
   }
+  if (tx.installment) details.unshift(`${tx.installment.index}/${tx.installment.count}`);
+  if (tagNames) details.push(tagNames);
   const subtitle = details.filter(Boolean).join(' · ');
 
   return (
@@ -66,6 +70,7 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[0.95rem] font-medium">{title}</span>
           {tx.scheduleId && <Repeat className="size-3.5 shrink-0 text-faint" aria-label={t('me.recurring')} />}
+          {tx.details && <NotebookPen className="size-3.5 shrink-0 text-faint" aria-label={t('tx.memo')} />}
           {tx.photoIds.length > 0 && <ImageIcon className="size-3.5 shrink-0 text-faint" aria-label={t('tx.photos')} />}
         </span>
         {subtitle && <span className="mt-0.5 block truncate text-[0.8rem] text-muted">{subtitle}</span>}

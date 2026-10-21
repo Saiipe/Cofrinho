@@ -88,6 +88,7 @@ export function Keypad({ expression, onChange, onSubmit, decimals, decimalSepara
               key="back"
               type="button"
               aria-label={t('keypad.backspace')}
+              data-no-tip
               onPointerDown={startBackspace}
               onPointerUp={endBackspace}
               onPointerLeave={endBackspace}

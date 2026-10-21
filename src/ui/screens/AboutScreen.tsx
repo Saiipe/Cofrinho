@@ -1,9 +1,9 @@
-import { HardDrive, ShieldCheck, Sparkles } from 'lucide-react';
+import { HardDrive, Megaphone, ShieldCheck, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { APP_VERSION } from '@/services/platform';
 import { useApp } from '../app/AppContext';
 import { Page } from '../components/Page';
-import { Card } from '../components/primitives';
+import { Card, Row } from '../components/primitives';
 import { AppLogo } from '../components/AppLogo';
 
 export default function AboutScreen() {
@@ -38,6 +38,9 @@ export default function AboutScreen() {
           <p className="mt-3 text-xl font-bold">{t('app.name')}</p>
           <p className="text-sm text-muted">{t('about.version', { version: APP_VERSION })}</p>
           <p className="mt-2 text-sm text-muted">{t('app.tagline')}</p>
+        </Card>
+        <Card className="overflow-hidden">
+          <Row to="/whats-new" leading={<Megaphone className="size-5 text-primary" aria-hidden />} title={t('about.whatsNew')} subtitle={t('changelog.version', { version: APP_VERSION })} />
         </Card>
         {section(ShieldCheck, t('about.privacy'), t('about.privacyText'))}
         {storage &&

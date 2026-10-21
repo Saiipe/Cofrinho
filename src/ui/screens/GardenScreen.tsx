@@ -1,15 +1,17 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Coins, Droplets, Info, Sparkles, Sprout } from 'lucide-react';
+import { Coins, Droplets, Info, Smartphone, Sparkles, Sprout } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MAX_STAGE, pendingLuck, stageProgress, WATER_COST } from '@/domain/garden';
 import type { MessageKey } from '@/i18n';
 import { haptic, playSound } from '@/services/feedback';
 import { getGarden, harvestLuck, water } from '@/services/garden';
+import { nativeCapabilities, pinShortcut } from '@/services/native';
+import { isNative } from '@/services/platform';
 import { useApp } from '../app/AppContext';
 import { InlineNotice, useFeedback } from '../components/feedback';
 import { GardenScene } from '../components/GardenScene';
 import { Page } from '../components/Page';
-import { Button, Card, SwitchRow } from '../components/primitives';
+import { Button, Card, Divider, Row, SwitchRow } from '../components/primitives';
 
 export default function GardenScreen() {
   const { settings, updateSettings, t } = useApp();
@@ -104,7 +106,7 @@ export default function GardenScreen() {
           <p className="mt-1">{t('garden.howToText')}</p>
         </InlineNotice>
 
-        <Card>
+        <Card className="overflow-hidden">
           <SwitchRow
             title={t('settings.gardenEntry')}
             checked={settings.gardenEntry}
@@ -113,6 +115,20 @@ export default function GardenScreen() {
               toast(v ? t('garden.entryOn') : t('garden.entryOff'));
             }}
           />
+          {isNative && (
+            <>
+              <Divider />
+              <Row
+                leading={<Smartphone className="size-5 text-primary" aria-hidden />}
+                title={t('garden.createShortcut')}
+                onClick={async () => {
+                  const caps = await nativeCapabilities();
+                  const requested = caps.pinShortcuts && (await pinShortcut('garden', t('shortcuts.garden'), '/garden', 'garden'));
+                  toast(requested ? t('shortcuts.requested') : t('shortcuts.unsupported'), { duration: requested ? 3500 : 6000 });
+                }}
+              />
+            </>
+          )}
         </Card>
       </div>
     </Page>

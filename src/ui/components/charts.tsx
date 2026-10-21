@@ -275,3 +275,135 @@ export function ChartLegend({ items }: { items: { color: string; label: ReactNod
     </div>
   );
 }
+
+export interface DonutSegment {
+  key: string;
+  value: number;
+  color: string;
+  label: string;
+}
+
+function arcPath(cx: number, cy: number, outer: number, inner: number, start: number, end: number): string {
+  const point = (radius: number, angle: number) => [cx + radius * Math.sin(angle), cy - radius * Math.cos(angle)] as const;
+  const large = end - start > Math.PI ? 1 : 0;
+  const [x1, y1] = point(outer, start);
+  const [x2, y2] = point(outer, end);
+  const [x3, y3] = point(inner, end);
+  const [x4, y4] = point(inner, start);
+  return `M${x1},${y1}A${outer},${outer} 0 ${large} 1 ${x2},${y2}L${x3},${y3}A${inner},${inner} 0 ${large} 0 ${x4},${y4}Z`;
+}
+
+/**
+ * Part-to-whole ring (≤ 6 segments: callers fold the tail into "Other"). Segments are separated by
+ * a 2px surface gap. Tapping a slice reports its key (the caller decides what a repeated tap does);
+ * the selected slice is enlarged and the rest dimmed; tapping the center clears the selection.
+ */
+export function DonutChart({
+  segments,
+  size = 156,
+  thickness = 24,
+  selected,
+  onSelect,
+  center,
+  ariaLabel,
+}: {
+  segments: DonutSegment[];
+  size?: number;
+  thickness?: number;
+  selected: string | null;
+  onSelect: (key: string | null) => void;
+  center?: ReactNode;
+  ariaLabel: string;
+}) {
+  const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
+  const pad = 4;
+  const c = size / 2;
+  const outer = c - pad;
+  const inner = outer - thickness;
+  let angle = 0;
+  const arcs = segments
+    .filter((s) => s.value > 0)
+    .map((segment) => {
+      const sweep = total > 0 ? (segment.value / total) * Math.PI * 2 : 0;
+      const arc = { segment, start: angle, end: angle + sweep };
+      angle += sweep;
+      return arc;
+    });
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} role="img" aria-label={ariaLabel} className="block overflow-visible">
+        {arcs.length === 1 ? (
+          <circle
+            cx={c}
+            cy={c}
+            r={(outer + inner) / 2}
+            fill="none"
+            stroke={arcs[0]!.segment.color}
+            strokeWidth={thickness}
+            onClick={() => onSelect(arcs[0]!.segment.key)}
+          />
+        ) : (
+          arcs.map(({ segment, start, end }) => {
+            const active = selected === segment.key;
+            // Hairline slices stay visible and tappable.
+            const visibleEnd = Math.max(end, start + 0.02);
+            return (
+              <path
+                key={segment.key}
+                d={arcPath(c, c, active ? outer + pad : outer, inner, start, visibleEnd)}
+                fill={segment.color}
+                stroke="var(--surface)"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                opacity={selected && !active ? 0.35 : 1}
+                className="cursor-pointer transition-opacity"
+                onClick={() => onSelect(segment.key)}
+              >
+                <title>{segment.label}</title>
+              </path>
+            );
+          })
+        )}
+      </svg>
+      {center && (
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className="absolute inset-0 m-auto flex flex-col items-center justify-center rounded-full text-center"
+          style={{ width: inner * 2 - 8, height: inner * 2 - 8 }}
+          tabIndex={-1}
+        >
+          {center}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Circular progress toward a target; the track is a lighter step of the same hue. */
+export function ProgressRing({ ratio, size = 132, thickness = 12, color = 'var(--primary)', children, label }: { ratio: number; size?: number; thickness?: number; color?: string; children?: ReactNode; label: string }) {
+  const radius = (size - thickness) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(1, Math.max(0, ratio));
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(clamped * 100)}>
+      <svg width={size} height={size} className="block -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={`color-mix(in srgb, ${color} 16%, transparent)`} strokeWidth={thickness} />
+        {clamped > 0 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={thickness}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference * clamped} ${circumference}`}
+            className="transition-[stroke-dasharray] duration-500"
+          />
+        )}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>
+    </div>
+  );
+}

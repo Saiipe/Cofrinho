@@ -10,10 +10,11 @@ import { categoryBreakdown, dailySeries, groupByDay, monthlySummaries, relativeC
 import type { CategoryKind, ID, Transaction } from '@/domain/types';
 import { useApp } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
-import { ColumnChart, ShareBar, type ColumnPoint } from '../components/charts';
-import { CategoryIcon, EntityIcon } from '../components/EntityIcon';
+import { ColumnChart, DonutChart, type ColumnPoint } from '../components/charts';
+import { AccountIcon } from '../components/banks';
+import { CategoryIcon } from '../components/EntityIcon';
 import { Page } from '../components/Page';
-import { Card, Divider, EmptyState, IconButton, Row, Segmented } from '../components/primitives';
+import { Card, cx, Divider, EmptyState, IconButton, Row, Segmented } from '../components/primitives';
 import { Sheet } from '../components/Sheet';
 import { TransactionDayList } from '../components/TransactionList';
 import { useFormat } from '../hooks/useFormat';
@@ -69,6 +70,7 @@ function KindView({ kind, mode, onMode }: { kind: CategoryKind; mode: 'month' | 
   const current = useLiveQuery(() => transactionsInPeriod(book.id, period), [book.id, period.start, period.end]);
   const before = useLiveQuery(() => transactionsInPeriod(book.id, previous), [book.id, previous.start, previous.end]);
   const [selectedCategory, setSelectedCategory] = useState<ID | null | undefined>(undefined);
+  const [focused, setFocused] = useState<string | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<string | null>(null);
   const [showTable, setShowTable] = useState(false);
 
@@ -106,10 +108,16 @@ function KindView({ kind, mode, onMode }: { kind: CategoryKind; mode: 'month' | 
   const segments = [
     ...topSlices.map((s) => {
       const category = s.categoryId ? categoryMap.get(s.categoryId) : undefined;
-      return { key: s.categoryId ?? 'none', value: s.amount, color: category?.color ?? '#8b93a1', label: `${categoryName(category)} ${format.percent(s.ratio)}` };
+      return { key: s.categoryId ?? 'none', value: s.amount, color: category?.color ?? '#8b93a1', name: categoryName(category), ratio: s.ratio, label: `${categoryName(category)} ${format.percent(s.ratio)}` };
     }),
-    ...(rest > 0 ? [{ key: 'rest', value: rest, color: 'var(--faint)', label: `${t('common.other')} ${format.percent(rest / total)}` }] : []),
+    ...(rest > 0 ? [{ key: 'rest', value: rest, color: 'var(--faint)', name: t('common.other'), ratio: rest / total, label: `${t('common.other')} ${format.percent(rest / total)}` }] : []),
   ];
+  const focusedSegment = segments.find((s) => s.key === focused);
+  // First tap highlights a slice; tapping it again (or its legend row) opens its records.
+  const focus = (key: string | null) => {
+    if (key !== null && key === focused && key !== 'rest') setSelectedCategory(key === 'none' ? null : key);
+    else setFocused(key);
+  };
 
   return (
     <>
@@ -151,10 +159,58 @@ function KindView({ kind, mode, onMode }: { kind: CategoryKind; mode: 'month' | 
                 </span>
               )}
             </div>
-            <div className="mt-4">
-              <ShareBar segments={segments} ariaLabel={segments.map((s) => s.label).join(', ')} onSelect={(key) => key !== 'rest' && setSelectedCategory(key === 'none' ? null : key)} />
-            </div>
           </Card>
+
+          <section>
+            <h2 className="mb-2 px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('charts.byCategory')}</h2>
+            <Card className="px-4 py-4">
+              <div className="flex items-center gap-4">
+                <DonutChart
+                  segments={segments}
+                  selected={focusedSegment ? focused : null}
+                  onSelect={focus}
+                  ariaLabel={segments.map((s) => s.label).join(', ')}
+                  center={
+                    focusedSegment ? (
+                      <>
+                        <span className="w-full truncate px-1 text-[0.7rem] text-muted">{focusedSegment.name}</span>
+                        <span className="text-[0.95rem] leading-tight font-semibold tabular">{format.compact(focusedSegment.value)}</span>
+                        <span className="text-[0.7rem] text-muted tabular">{format.percent(focusedSegment.ratio)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[0.7rem] text-muted">{t('common.total')}</span>
+                        <span className="text-[0.95rem] leading-tight font-semibold tabular">{format.compact(total)}</span>
+                      </>
+                    )
+                  }
+                />
+                <ul className="min-w-0 flex-1 space-y-0.5">
+                  {segments.map((segment) => (
+                    <li key={segment.key}>
+                      <button
+                        type="button"
+                        onClick={() => focus(segment.key)}
+                        aria-pressed={focusedSegment?.key === segment.key}
+                        className={cx('flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-left text-[0.8rem]', focusedSegment?.key === segment.key && 'bg-surface-2', focusedSegment && focusedSegment.key !== segment.key && 'opacity-50')}
+                      >
+                        <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: segment.color }} aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">{segment.name}</span>
+                        <span className="shrink-0 text-muted tabular">{format.percent(segment.ratio, 0)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {focusedSegment ? (
+                <p className="mt-3 text-[0.8rem] text-muted">
+                  <span className="font-semibold text-fg">{focusedSegment.name}</span>: {format.money(focusedSegment.value)} · {t('charts.ofTotal', { value: format.percent(focusedSegment.ratio) })}
+                </p>
+              ) : (
+                <p className="mt-3 text-[0.75rem] text-faint">{t('charts.tapSlice')}</p>
+              )}
+            </Card>
+          </section>
 
           <section>
             <h2 className="mb-2 px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('charts.ranking')}</h2>
@@ -313,7 +369,7 @@ function AccountsView() {
             {index > 0 && <Divider inset />}
             <Row
               to={`/accounts/${account.id}`}
-              leading={<EntityIcon icon={account.icon} color={account.color} />}
+              leading={<AccountIcon account={account} />}
               title={account.name}
               subtitle={[isLiability(account.type) ? t('charts.liabilities') : t('charts.assets'), account.excludeFromTotals ? t('charts.excluded') : null].filter(Boolean).join(' · ')}
               trailing={<span className="font-semibold text-fg tabular">{format.money(balances.get(account.id) ?? 0, account.currency)}</span>}

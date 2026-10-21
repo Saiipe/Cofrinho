@@ -94,6 +94,8 @@ export default function SettingsScreen() {
               toast(v ? t('garden.entryOn') : t('garden.entryOff'));
             }}
           />
+          <Divider />
+          <Row title={t('me.widgets')} subtitle={t('shortcuts.title')} to="/shortcuts" />
         </Section>
 
         <Section title={t('settings.calendar')}>

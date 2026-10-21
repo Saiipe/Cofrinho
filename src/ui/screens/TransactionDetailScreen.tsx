@@ -3,7 +3,7 @@ import { ArrowRightLeft, Copy, HandCoins, Pencil, Scale, Trash2 } from 'lucide-r
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
-import { deleteTransaction, duplicateTransaction } from '@/data/transactions';
+import { deleteInstallmentGroup, deleteTransaction, duplicateTransaction } from '@/data/transactions';
 import { kindLabel } from '@/i18n/labels';
 import type { MessageKey } from '@/i18n';
 import { useApp } from '../app/AppContext';
@@ -13,7 +13,9 @@ import { CategoryIcon } from '../components/EntityIcon';
 import { useFeedback } from '../components/feedback';
 import { Page, useGoBack } from '../components/Page';
 import { PhotoThumb, PhotoViewer } from '../components/photos';
-import { Card, Divider, EmptyState, IconButton, Row } from '../components/primitives';
+import { Button, Card, Divider, EmptyState, IconButton, Row } from '../components/primitives';
+import { Sheet } from '../components/Sheet';
+import { TagList } from '../components/tags';
 import { useFormat } from '../hooks/useFormat';
 
 export default function TransactionDetailScreen() {
@@ -25,6 +27,7 @@ export default function TransactionDetailScreen() {
   const navigate = useNavigate();
   const goBack = useGoBack('/');
   const [viewing, setViewing] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const tx = useLiveQuery(() => db.transactions.get(id), [id]);
   const schedule = useLiveQuery(async () => (tx?.scheduleId ? ((await db.schedules.get(tx.scheduleId)) ?? null) : null), [tx?.scheduleId]);
 
@@ -45,9 +48,25 @@ export default function TransactionDetailScreen() {
   const editable = tx.kind !== 'adjustment';
 
   const remove = async () => {
+    if (tx.installment) {
+      setDeleting(true);
+      return;
+    }
     if (!(await confirm({ title: t('tx.deleteConfirm'), message: t('common.irreversible'), confirmLabel: t('common.delete'), destructive: true }))) return;
     await deleteTransaction(tx.id);
     toast(t('tx.deleted'));
+    goBack();
+  };
+
+  const removeInstallments = async (fromIndex: number | null) => {
+    setDeleting(false);
+    if (fromIndex === null || !tx.installment) {
+      await deleteTransaction(tx.id);
+      toast(t('tx.deleted'));
+    } else {
+      const count = await deleteInstallmentGroup(tx.bookId, tx.installment.groupId, fromIndex);
+      toast(t('tx.installmentsDeleted', { count }));
+    }
     goBack();
   };
 
@@ -127,6 +146,12 @@ export default function TransactionDetailScreen() {
               <Row title={t('tx.bookAmount')} trailing={format.money(Math.abs(tx.amount))} />
             </>
           ) : null}
+          {tx.installment && (
+            <>
+              <Divider />
+              <Row title={t('tx.installment')} trailing={t('tx.installmentValue', { index: tx.installment.index, count: tx.installment.count })} />
+            </>
+          )}
           {tx.note && (
             <>
               <Divider />
@@ -155,6 +180,22 @@ export default function TransactionDetailScreen() {
           </Card>
         )}
 
+        {tx.tagIds && tx.tagIds.length > 0 && (
+          <div>
+            <p className="mb-2 px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('tags.title')}</p>
+            <TagList ids={tx.tagIds} />
+          </div>
+        )}
+
+        {tx.details && (
+          <div>
+            <p className="mb-2 px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('tx.memo')}</p>
+            <Card className="px-4 py-3">
+              <p className="text-[0.95rem] break-words whitespace-pre-wrap">{tx.details}</p>
+            </Card>
+          </div>
+        )}
+
         {tx.photoIds.length > 0 && (
           <div>
             <p className="mb-2 px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('tx.photos')}</p>
@@ -169,6 +210,24 @@ export default function TransactionDetailScreen() {
         <p className="pb-4 text-center text-xs text-faint">{t('tx.createdAt', { date: format.dateTime(tx.createdAt) })}</p>
       </div>
       {viewing !== null && <PhotoViewer ids={tx.photoIds} index={viewing} onClose={() => setViewing(null)} />}
+      {tx.installment && (
+        <Sheet open={deleting} onClose={() => setDeleting(false)} title={t('tx.deleteInstallmentTitle', { index: tx.installment.index, count: tx.installment.count })}>
+          <div className="space-y-2 px-4 pb-5">
+            <Button block variant="secondary" onClick={() => void removeInstallments(null)}>
+              {t('tx.deleteThisInstallment')}
+            </Button>
+            {tx.installment.index < tx.installment.count && (
+              <Button block variant="secondary" onClick={() => void removeInstallments(tx.installment!.index)}>
+                {t('tx.deleteNextInstallments')}
+              </Button>
+            )}
+            <Button block variant="danger" onClick={() => void removeInstallments(1)}>
+              {t('tx.deleteAllInstallments', { count: tx.installment.count })}
+            </Button>
+            <p className="pt-1 text-center text-xs text-muted">{t('common.irreversible')}</p>
+          </div>
+        </Sheet>
+      )}
     </Page>
   );
 }

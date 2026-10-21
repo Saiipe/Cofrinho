@@ -1,7 +1,7 @@
 import { dayKey } from '@/domain/dates';
 import { formatMoney, toMajor, type MoneyFormat } from '@/domain/money';
 import { categoryBreakdown, totals } from '@/domain/stats';
-import type { Account, Book, Category, ID, Member, Transaction } from '@/domain/types';
+import type { Account, Book, Category, ID, Member, Tag, Transaction } from '@/domain/types';
 import type { Translate } from '@/i18n';
 import { categoryLabel, kindLabel } from '@/i18n/labels';
 import { toCsv, type CsvValue } from './csv';
@@ -16,6 +16,8 @@ export interface ExportContext {
   categories: Map<ID, Category>;
   accounts: Map<ID, Account>;
   members: Map<ID, Member>;
+  /** Optional so older callers keep working; tag columns stay empty without it. */
+  tags?: Map<ID, Tag>;
   t: Translate;
   locale: string;
   money: MoneyFormat;
@@ -37,6 +39,8 @@ export interface ExportRow {
   account: string;
   toAccount: string;
   photos: number;
+  tags: string;
+  details: string;
 }
 
 function memberColumn(tx: Transaction, members: Map<ID, Member>): string {
@@ -65,6 +69,8 @@ export function buildExportRows(transactions: Transaction[], ctx: ExportContext)
         account: accountName(tx.accountId),
         toAccount: accountName(tx.toAccountId),
         photos: tx.photoIds.length,
+        tags: (tx.tagIds ?? []).map((id) => ctx.tags?.get(id)?.name).filter(Boolean).join(', '),
+        details: tx.details ?? '',
       };
     });
 }
@@ -84,6 +90,8 @@ function headers(t: Translate): string[] {
     t('export.col.account'),
     t('export.col.toAccount'),
     t('export.col.photos'),
+    t('export.col.tags'),
+    t('export.col.details'),
   ];
 }
 
@@ -104,9 +112,11 @@ export function exportXlsx(rows: ExportRow[], ctx: ExportContext): Uint8Array {
       r.account,
       r.toAccount,
       r.photos || null,
+      r.tags,
+      r.details,
     ]),
   ];
-  return buildXlsx([{ name: ctx.book.name, rows: data, header: true, widths: [17, 16, 20, 20, 14, 32, 13, 8, 13, 8, 18, 18, 7] }]);
+  return buildXlsx([{ name: ctx.book.name, rows: data, header: true, widths: [17, 16, 20, 20, 14, 32, 13, 8, 13, 8, 18, 18, 7, 20, 40] }]);
 }
 
 function plainDate(date: Date): string {
@@ -133,6 +143,8 @@ export function exportCsv(rows: ExportRow[], ctx: ExportContext, decimalSeparato
       r.account,
       r.toAccount,
       r.photos || '',
+      r.tags,
+      r.details,
     ]),
   ];
   return toCsv(data, delimiter);
@@ -162,6 +174,8 @@ export function exportJson(rows: ExportRow[], ctx: ExportContext): string {
         originalCurrency: r.tx.currency,
         account: r.account,
         toAccount: r.toAccount,
+        ...(r.tags ? { tags: r.tags } : {}),
+        ...(r.details ? { details: r.details } : {}),
       })),
     },
     null,

@@ -168,6 +168,7 @@ export function SortableList<T extends { id: string }>({ items, onReorder, rende
           <button
             type="button"
             aria-label={t('common.dragToSort')}
+            data-no-tip
             onPointerDown={(e) => start(id, e)}
             onPointerMove={move}
             onPointerUp={end}

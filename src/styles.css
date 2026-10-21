@@ -150,6 +150,14 @@
     cursor: pointer;
     touch-action: manipulation;
   }
+  /* Touch and hold shows our own tooltip instead of text selection or the link menu. */
+  button,
+  a,
+  [role='button'] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
   :focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;

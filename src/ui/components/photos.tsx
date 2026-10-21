@@ -87,6 +87,7 @@ export function PhotosSheet({ open, onClose, photoIds, onChange, onAdded }: { op
   return (
     <Sheet open={open} onClose={onClose} title={t('tx.photos')}>
       <div className="space-y-4 px-4 pb-5">
+        {photoIds.length === 0 && <p className="text-sm text-muted">{t('tx.attachmentsHint')}</p>}
         {photoIds.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {photoIds.map((id, i) => (

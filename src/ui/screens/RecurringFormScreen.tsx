@@ -6,7 +6,7 @@ import { db } from '@/data/db';
 import { deleteSchedule, runDueSchedules, saveSchedule } from '@/data/schedules';
 import { dayKey, todayKey, withDay } from '@/domain/dates';
 import { NOTE_MAX } from '@/domain/defaults';
-import { FREQUENCIES, initialLastRun, MAX_RUN_COUNT, nextOccurrence, recomputeLastRun, RUN_COUNT_PRESETS, SCHEDULE_NAME_MAX } from '@/domain/schedule';
+import { dueOccurrences, FREQUENCIES, initialLastRun, MAX_RUN_COUNT, nextOccurrence, recomputeLastRun, RUN_COUNT_PRESETS, SCHEDULE_NAME_MAX } from '@/domain/schedule';
 import type { Frequency, ID, Schedule } from '@/domain/types';
 import { frequencyLabel } from '@/i18n/labels';
 import type { MessageKey } from '@/i18n';
@@ -50,6 +50,8 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
   const [customCount, setCustomCount] = useState(existing && !RUN_COUNT_PRESETS.includes(existing.totalCount) ? String(existing.totalCount) : '');
   const [note, setNote] = useState(existing?.note ?? '');
   const [paused, setPaused] = useState(existing?.status === 'paused');
+  // New plans record the start date (and any dates since) right away, so they show up in the list at once.
+  const [backfill, setBackfill] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<'category' | 'account' | 'from' | 'to' | 'amount' | 'toAmount' | 'currency' | 'date' | null>(null);
 
@@ -62,8 +64,10 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
   const rule = { frequency, startDate };
   const today = todayKey();
   const ruleChanged = existing && (existing.frequency !== frequency || existing.startDate !== startDate || existing.totalCount !== count);
-  const lastRun = existing ? (ruleChanged ? recomputeLastRun(rule, existing.lastRunDate, today) : existing.lastRunDate) : initialLastRun(rule, today);
+  const canBackfill = !existing && startDate <= today;
+  const lastRun = existing ? (ruleChanged ? recomputeLastRun(rule, existing.lastRunDate, today) : existing.lastRunDate) : canBackfill && backfill ? null : initialLastRun(rule, today);
   const next = nextOccurrence({ ...rule, lastRunDate: lastRun, totalCount: count, runCount: existing?.runCount ?? 0 });
+  const backfillCount = canBackfill ? dueOccurrences({ ...rule, lastRunDate: null, totalCount: count, runCount: 0 }, today).length : 0;
 
   const fail = (key: MessageKey) => {
     setError(t(key));
@@ -93,6 +97,7 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
       totalCount: count,
       note,
       paused,
+      backfill: canBackfill && backfill,
     });
     const runs = await runDueSchedules();
     const created = runs.reduce((sum, r) => sum + r.created.length, 0);
@@ -206,6 +211,12 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
         </div>
 
         <TextField label={`${t('common.note')} (${t('common.optional')})`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={NOTE_MAX} />
+
+        {canBackfill && (
+          <Card>
+            <SwitchRow title={t('recurring.backfill')} subtitle={backfill ? t('recurring.backfillHint', { count: backfillCount }) : t('recurring.backfillOff')} checked={backfill} onChange={setBackfill} />
+          </Card>
+        )}
 
         {existing && existing.status !== 'completed' && (
           <Card>

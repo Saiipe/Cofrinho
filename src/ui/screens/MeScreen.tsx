@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  ArrowDownToLine, ArrowUpFromLine, BellRing, BookCopy, CalendarSync, CloudUpload, Coins, Flame, Info, Landmark, ReceiptText, Settings, Shapes, Sprout, Target,
+  ArrowDownToLine, ArrowUpFromLine, BellRing, BookCopy, CalendarSync, CloudUpload, Coins, CreditCard, Flame, Goal, Hash, Info, Landmark, LayoutGrid, ReceiptText, Settings, Shapes,
+  Sprout, Target,
 } from 'lucide-react';
 import { db } from '@/data/db';
 import { todayKey } from '@/domain/dates';
@@ -21,18 +22,26 @@ function MenuIcon({ icon: Icon }: { icon: typeof Settings }) {
 
 export default function MeScreen() {
   const { t } = useApp();
-  const { book, books, isSplit, accounts } = useBook();
+  const { book, books, isSplit, accounts, tags } = useBook();
+  const cardCount = accounts.filter((a) => a.type === 'credit').length;
   const createdAt = useLiveQuery(async () => (await db.transactions.orderBy('createdAt').keys()) as number[], []);
   const stats = recordingStats(createdAt ?? [], todayKey());
 
   const organize = [
     { to: '/books', icon: BookCopy, title: t('me.books'), trailing: String(books.length) },
-    ...(isSplit ? [] : [{ to: '/accounts', icon: Landmark, title: t('me.accounts'), trailing: accounts.length ? String(accounts.length) : undefined }]),
+    ...(isSplit
+      ? []
+      : [
+          { to: '/accounts', icon: Landmark, title: t('me.accounts'), trailing: accounts.length ? String(accounts.length) : undefined },
+          { to: '/cards', icon: CreditCard, title: t('me.cards'), trailing: cardCount ? String(cardCount) : undefined },
+        ]),
     { to: '/categories', icon: Shapes, title: t('me.categories') },
+    { to: '/tags', icon: Hash, title: t('me.tags'), trailing: tags.length ? String(tags.length) : undefined },
     ...(isSplit
       ? []
       : [
           { to: '/budget', icon: Target, title: t('me.budget') },
+          { to: '/goals', icon: Goal, title: t('me.goals') },
           { to: '/recurring', icon: CalendarSync, title: t('me.recurring') },
         ]),
     { to: '/reminders', icon: BellRing, title: t('me.reminders') },
@@ -42,6 +51,7 @@ export default function MeScreen() {
     ...(isSplit ? [] : [{ to: '/import', icon: ArrowDownToLine, title: t('me.import') }]),
     { to: '/export', icon: ArrowUpFromLine, title: t('me.export') },
     { to: '/backup', icon: CloudUpload, title: t('me.backup') },
+    { to: '/shortcuts', icon: LayoutGrid, title: t('me.widgets') },
     { to: '/garden', icon: Sprout, title: t('me.garden') },
   ];
   const app = [

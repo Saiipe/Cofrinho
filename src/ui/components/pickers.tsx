@@ -9,6 +9,7 @@ import { useBook, useOptionalBook } from '../app/BookContext';
 import { allCurrencies, currencyName } from '../currencies';
 import { useFormat } from '../hooks/useFormat';
 import { ICON_GROUPS, iconFor } from '../icons';
+import { AccountIcon } from './banks';
 import { CategoryIcon, EntityIcon } from './EntityIcon';
 import { Sheet } from './Sheet';
 import { Button, Chip, cx, IconButton } from './primitives';
@@ -218,7 +219,7 @@ export function AccountPickerSheet({
             key={account.id}
             selected={account.id === value}
             onClick={() => choose(account)}
-            leading={<EntityIcon icon={account.icon} color={account.color} />}
+            leading={<AccountIcon account={account} />}
             label={account.name}
             hint={account.currency}
           />
@@ -401,7 +402,7 @@ export function IconPickerSheet({ open, onClose, value, color, onSelect }: { ope
     <Sheet open={open} onClose={onClose} title={t('categories.chooseIcon')} tall>
       <div className="px-3 pb-5">
         {ICON_GROUPS.map((group) => (
-          <div key={group.key} className="mb-3">
+          <div key={group.key} className="mb-3" data-no-tip>
             <p className="px-2 pt-2 pb-1.5 text-xs font-semibold tracking-wide text-muted uppercase">{t(group.key)}</p>
             <div className="grid grid-cols-6 gap-1">
               {group.icons.map((icon) => {
@@ -434,7 +435,7 @@ export function IconPickerSheet({ open, onClose, value, color, onSelect }: { ope
 
 export function ColorSwatches({ colors, value, onChange, label }: { colors: string[]; value: string; onChange: (color: string) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2.5">
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2.5" data-no-tip>
       {colors.map((color) => (
         <button
           key={color}

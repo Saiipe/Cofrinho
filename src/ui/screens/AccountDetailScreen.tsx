@@ -10,7 +10,8 @@ import { accountTypeLabel } from '@/i18n/labels';
 import { useApp } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
 import { AmountSheet } from '../components/AmountSheet';
-import { EntityIcon } from '../components/EntityIcon';
+import { AccountIcon } from '../components/banks';
+import { CardDetail } from '../components/CardDetail';
 import { useFeedback } from '../components/feedback';
 import { Page } from '../components/Page';
 import { Button, Card, EmptyState, IconButton } from '../components/primitives';
@@ -55,11 +56,24 @@ export default function AccountDetailScreen() {
     else toast(t('accounts.adjusted'), { tone: 'success' });
   };
 
+  const adjustSheet = (
+    <AmountSheet open={adjusting} onClose={() => setAdjusting(false)} title={t('accounts.newBalance')} hint={t('accounts.adjustHint')} currency={account.currency} initial={balance ?? 0} allowNonPositive onSave={(v) => void adjust(v)} />
+  );
+
+  if (account.type === 'credit') {
+    return (
+      <Page title={account.name} back="/cards" actions={<IconButton icon={Pencil} label={t('common.edit')} onClick={() => navigate(`/accounts/${account.id}/edit`)} />}>
+        {txs && <CardDetail account={account} transactions={txs} onAdjust={() => setAdjusting(true)} />}
+        {adjustSheet}
+      </Page>
+    );
+  }
+
   return (
     <Page title={account.name} back="/accounts" actions={<IconButton icon={Pencil} label={t('common.edit')} onClick={() => navigate(`/accounts/${account.id}/edit`)} />}>
       <div className="space-y-4 px-4">
         <Card className="flex flex-col items-center px-6 py-6 text-center">
-          <EntityIcon icon={account.icon} color={account.color} size="xl" mono={false} />
+          <AccountIcon account={account} size="xl" mono={false} />
           <p className="mt-3 text-sm text-muted">
             {accountTypeLabel(account.type, t)} · {account.currency}
           </p>
@@ -74,7 +88,7 @@ export default function AccountDetailScreen() {
         <h2 className="px-1 text-[0.8rem] font-semibold tracking-wide text-muted uppercase">{t('accounts.activity')}</h2>
       </div>
       {txs && txs.length === 0 ? <p className="px-4 py-6 text-center text-sm text-muted">{t('home.empty')}</p> : <TransactionDayList groups={groups} />}
-      <AmountSheet open={adjusting} onClose={() => setAdjusting(false)} title={t('accounts.newBalance')} hint={t('accounts.adjustHint')} currency={account.currency} initial={balance ?? 0} allowNonPositive onSave={(v) => void adjust(v)} />
+      {adjustSheet}
     </Page>
   );
 }

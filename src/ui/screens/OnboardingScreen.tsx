@@ -4,6 +4,7 @@ import { guessCurrency } from '@/data/settings';
 import { BOOK_COLORS } from '@/domain/defaults';
 import { currencySymbol } from '@/domain/money';
 import { createTranslator, LANGUAGES, type Language } from '@/i18n';
+import { APP_VERSION } from '@/services/platform';
 import { useApp } from '../app/AppContext';
 import { currencyName } from '../currencies';
 import { CurrencyPickerSheet } from '../components/pickers';
@@ -22,7 +23,8 @@ export default function OnboardingScreen() {
   const start = async () => {
     setBusy(true);
     const book = await createBook({ name: t('books.defaultName'), type: 'personal', currency, color: BOOK_COLORS[0]! });
-    await updateSettings({ language, defaultCurrency: currency, currentBookId: book.id, onboarded: true });
+    // A fresh install has nothing "new" to announce.
+    await updateSettings({ language, defaultCurrency: currency, currentBookId: book.id, onboarded: true, lastSeenVersion: APP_VERSION });
   };
 
   return (

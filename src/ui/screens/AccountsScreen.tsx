@@ -8,7 +8,7 @@ import { convertMinor } from '@/domain/money';
 import { accountTypeLabel } from '@/i18n/labels';
 import { useApp } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
-import { EntityIcon } from '../components/EntityIcon';
+import { AccountIcon } from '../components/banks';
 import { useFeedback } from '../components/feedback';
 import { SortableList, SwipeRow } from '../components/gestures';
 import { Page } from '../components/Page';
@@ -66,7 +66,7 @@ export default function AccountsScreen() {
                 <SwipeRow label={t('common.delete')} onDelete={() => void remove(account.id, account.name)}>
                   <div className="flex items-center border-b border-line pr-1 last:border-0">
                     <Link to={`/accounts/${account.id}`} className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 active:bg-surface-2">
-                      <EntityIcon icon={account.icon} color={account.color} />
+                      <AccountIcon account={account} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
                           <span className="truncate font-medium">{account.name}</span>

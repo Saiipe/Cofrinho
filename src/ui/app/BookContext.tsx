@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { db } from '@/data/db';
 import { buildRateTable, lookupRate, type RateTable } from '@/data/rates';
-import type { Account, Book, Category, CategoryKind, ID, Member } from '@/domain/types';
+import type { Account, Book, Category, CategoryKind, ID, Member, Tag } from '@/domain/types';
 import { categoryLabel } from '@/i18n/labels';
 import { useApp } from './AppContext';
 
@@ -17,6 +17,8 @@ interface BookContextValue {
   members: Member[];
   memberMap: Map<ID, Member>;
   me: Member | undefined;
+  tags: Tag[];
+  tagMap: Map<ID, Tag>;
   rates: RateTable;
   rate: (from: string, to: string) => number | null;
   categoryName: (category: Category | ID | null | undefined) => string;
@@ -38,14 +40,16 @@ export function BookProvider({ children, fallback }: { children: ReactNode; fall
   const categories = useLiveQuery(() => db.categories.where('bookId').equals(bookId).toArray(), [bookId]);
   const accounts = useLiveQuery(() => db.accounts.where('bookId').equals(bookId).toArray(), [bookId]);
   const members = useLiveQuery(() => db.members.where('bookId').equals(bookId).toArray(), [bookId]);
+  const tags = useLiveQuery(() => db.tags.where('bookId').equals(bookId).toArray(), [bookId]);
   const market = useLiveQuery(() => db.rates.toArray(), []);
   const custom = useLiveQuery(() => db.customRates.toArray(), []);
 
   const value = useMemo<BookContextValue | null>(() => {
-    if (!book || !books || !categories || !accounts || !members || !market || !custom) return null;
+    if (!book || !books || !categories || !accounts || !members || !tags || !market || !custom) return null;
     const sortedCategories = [...categories].sort(byOrder);
     const sortedAccounts = [...accounts].sort(byOrder);
     const sortedMembers = [...members].sort(byOrder);
+    const sortedTags = [...tags].sort(byOrder);
     const categoryMap = new Map(sortedCategories.map((c) => [c.id, c]));
     const rates = buildRateTable(market, custom);
     return {
@@ -59,6 +63,8 @@ export function BookProvider({ children, fallback }: { children: ReactNode; fall
       members: sortedMembers,
       memberMap: new Map(sortedMembers.map((m) => [m.id, m])),
       me: sortedMembers.find((m) => m.isMe),
+      tags: sortedTags,
+      tagMap: new Map(sortedTags.map((tag) => [tag.id, tag])),
       rates,
       rate: (from, to) => lookupRate(rates, from, to),
       categoryName: (category) => {
@@ -69,7 +75,7 @@ export function BookProvider({ children, fallback }: { children: ReactNode; fall
       childrenOf: (parentId) => sortedCategories.filter((c) => c.parentId === parentId),
       defaultAccount: sortedAccounts.find((a) => a.isDefault),
     };
-  }, [book, books, categories, accounts, members, market, custom, t]);
+  }, [book, books, categories, accounts, members, tags, market, custom, t]);
 
   if (books && books.length === 0) return <>{fallback('empty')}</>;
   if (!value) return <>{fallback('loading')}</>;

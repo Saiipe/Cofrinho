@@ -13,6 +13,7 @@ import { useGoBack } from '../components/Page';
 import { AccountPickerSheet } from '../components/pickers';
 import { Button, Chip, EmptyState, IconButton } from '../components/primitives';
 import { Sheet } from '../components/Sheet';
+import { TagPill } from '../components/tags';
 import { TransactionDayList } from '../components/TransactionList';
 import { useFormat } from '../hooks/useFormat';
 
@@ -26,7 +27,7 @@ const KIND_MATCH: Record<Exclude<KindFilter, 'all'>, TxKind[]> = {
 
 export default function SearchScreen() {
   const { t } = useApp();
-  const { book, isSplit, categoryMap, categoryName, accountMap, topCategories } = useBook();
+  const { book, isSplit, categoryMap, categoryName, accountMap, topCategories, tags, tagMap } = useBook();
   const format = useFormat();
   const goBack = useGoBack('/');
   const [query, setQuery] = useState('');
@@ -35,7 +36,8 @@ export default function SearchScreen() {
   const [categories, setCategories] = useState<ID[]>([]);
   const [year, setYear] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<ID | null>(null);
-  const [sheet, setSheet] = useState<'categories' | 'year' | 'account' | null>(null);
+  const [tagIds, setTagIds] = useState<ID[]>([]);
+  const [sheet, setSheet] = useState<'categories' | 'year' | 'account' | 'tags' | null>(null);
   const all = useLiveQuery(() => bookTransactions(book.id), [book.id]);
 
   const years = useMemo(() => [...new Set((all ?? []).map((tx) => new Date(tx.date).getFullYear()))].sort((a, b) => b - a), [all]);
@@ -49,6 +51,7 @@ export default function SearchScreen() {
       if (kind !== 'all' && !KIND_MATCH[kind].includes(tx.kind)) return false;
       if (year !== null && new Date(tx.date).getFullYear() !== year) return false;
       if (accountId && tx.accountId !== accountId && tx.toAccountId !== accountId) return false;
+      if (tagIds.length && !tagIds.every((id) => tx.tagIds?.includes(id))) return false;
       if (selected.size) {
         const category = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
         if (!category || !(selected.has(category.id) || (category.parentId && selected.has(category.parentId)))) return false;
@@ -57,16 +60,24 @@ export default function SearchScreen() {
       const category = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
       const parent = category?.parentId ? categoryMap.get(category.parentId) : undefined;
       const haystack = normalizeText(
-        [tx.note, categoryName(category), parent ? categoryName(parent) : '', tx.accountId ? accountMap.get(tx.accountId)?.name : '', minorToDecimalString(tx.originalAmount, tx.currency)].join(' '),
+        [
+          tx.note,
+          tx.details ?? '',
+          ...(tx.tagIds ?? []).map((id) => `#${tagMap.get(id)?.name ?? ''}`),
+          categoryName(category),
+          parent ? categoryName(parent) : '',
+          tx.accountId ? accountMap.get(tx.accountId)?.name : '',
+          minorToDecimalString(tx.originalAmount, tx.currency),
+        ].join(' '),
       );
       if (haystack.includes(q)) return true;
       return number !== null && Math.abs(tx.originalAmount) === toMinor(Math.abs(number), tx.currency);
     });
-  }, [all, deferred, kind, year, accountId, categories, categoryMap, categoryName, accountMap]);
+  }, [all, deferred, kind, year, accountId, tagIds, categories, categoryMap, categoryName, accountMap, tagMap]);
 
   const groups = useMemo(() => groupByDay(results.slice(0, 500)), [results]);
   const sum = results.reduce((total, tx) => total + (tx.kind === 'income' ? tx.amount : tx.kind === 'expense' || tx.kind === 'split_expense' ? -tx.amount : 0), 0);
-  const filtersActive = kind !== 'all' || categories.length > 0 || year !== null || accountId !== null;
+  const filtersActive = kind !== 'all' || categories.length > 0 || year !== null || accountId !== null || tagIds.length > 0;
 
   const kinds: { value: KindFilter; label: string }[] = [
     { value: 'all', label: t('search.anyType') },
@@ -107,6 +118,11 @@ export default function SearchScreen() {
               {accountId ? accountMap.get(accountId)?.name : t('search.accounts')}
             </Chip>
           )}
+          {tags.length > 0 && (
+            <Chip active={tagIds.length > 0} onClick={() => setSheet('tags')}>
+              {tagIds.length === 1 ? `#${tagMap.get(tagIds[0]!)?.name ?? ''}` : tagIds.length ? t('search.selectedCount', { count: tagIds.length }) : t('search.tags')}
+            </Chip>
+          )}
           {filtersActive && (
             <Chip
               onClick={() => {
@@ -114,6 +130,7 @@ export default function SearchScreen() {
                 setCategories([]);
                 setYear(null);
                 setAccountId(null);
+                setTagIds([]);
               }}
             >
               <X className="size-4" aria-hidden />
@@ -166,6 +183,13 @@ export default function SearchScreen() {
             <Chip key={y} active={year === y} onClick={() => { setYear(y); setSheet(null); }}>
               {y}
             </Chip>
+          ))}
+        </div>
+      </Sheet>
+      <Sheet open={sheet === 'tags'} onClose={() => setSheet(null)} title={t('search.tags')} footer={<Button block onClick={() => setSheet(null)}>{t('common.done')}</Button>}>
+        <div className="flex flex-wrap gap-2 px-4 pb-4">
+          {tags.map((tag) => (
+            <TagPill key={tag.id} tag={tag} active={tagIds.includes(tag.id)} onClick={() => setTagIds((list) => (list.includes(tag.id) ? list.filter((id) => id !== tag.id) : [...list, tag.id]))} />
           ))}
         </div>
       </Sheet>

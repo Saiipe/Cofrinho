@@ -1,35 +1,42 @@
-import { ArrowDown, CalendarDays, Camera, Mic, Shapes, Sparkles, Wallet, X } from 'lucide-react';
+import { ArrowDown, CalendarDays, Calculator, Camera, ChevronDown, CreditCard, Hash, Mic, NotebookPen, Repeat, Shapes, Sparkles, Wallet, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/data/db';
 import { discardPhotos } from '@/data/photos';
-import { saveTransaction, suggestNotes, type TransactionInput } from '@/data/transactions';
+import { runDueSchedules } from '@/data/schedules';
+import { saveInstallments, saveRecurringTransaction, saveTransaction, suggestNotes, type RepeatRule, type TransactionInput } from '@/data/transactions';
 import { resolveAmounts } from '@/domain/amounts';
+import { cardRule, cycleOf } from '@/domain/card';
 import { displayExpression, evaluate, expressionFromDecimal, hasOperator } from '@/domain/calculator';
-import { dayKey, todayKey, withDay } from '@/domain/dates';
+import { dayKey, parseDayKey, todayKey, withDay } from '@/domain/dates';
 import { NOTE_MAX } from '@/domain/defaults';
 import { convertMinor, currencyExponent, currencySymbol, minorToDecimalString, parseLocaleNumber, toMinor } from '@/domain/money';
 import { parseQuickEntry } from '@/domain/quickEntry';
 import type { ID, SplitData, Transaction } from '@/domain/types';
 import type { MessageKey } from '@/i18n';
-import { memberLabel } from '@/i18n/labels';
+import { frequencyLabel, memberLabel } from '@/i18n/labels';
 import { haptic, playSound } from '@/services/feedback';
 import { rewardRecording } from '@/services/garden';
 import { listenOnce, speechSupported } from '@/services/speech';
 import { useApp } from '../app/AppContext';
+import { useBackHandler } from '../app/back';
 import { useBook } from '../app/BookContext';
+import { AccountIcon } from '../components/banks';
 import { useFeedback } from '../components/feedback';
 import { Keypad } from '../components/Keypad';
 import { useGoBack } from '../components/Page';
 import { AccountPickerSheet, CategoryGrid, CategoryPickerSheet, CurrencyPickerSheet, DatePickerSheet } from '../components/pickers';
 import { PhotosSheet } from '../components/photos';
-import { Chip, cx, IconButton, Segmented } from '../components/primitives';
+import { Button, Chip, cx, IconButton, Segmented } from '../components/primitives';
 import { initialSplitDraft, resolveSplit, SplitEditor, type SplitDraft } from '../components/SplitEditor';
 import { EntityIcon } from '../components/EntityIcon';
+import { TagPickerSheet } from '../components/tags';
+import { InstallmentsSheet, MemoSheet, RepeatSheet } from '../components/TransactionExtras';
 import { useFormat } from '../hooks/useFormat';
 
 type FormKind = 'expense' | 'income' | 'transfer' | 'split_expense' | 'split_payment';
+type SheetName = 'date' | 'account' | 'from' | 'to' | 'currency' | 'photos' | 'category' | 'tags' | 'memo' | 'repeat' | 'installments';
 
 const PERSONAL_KINDS: FormKind[] = ['expense', 'income', 'transfer'];
 const SPLIT_KINDS: FormKind[] = ['split_expense', 'split_payment'];
@@ -37,16 +44,18 @@ const SPLIT_KINDS: FormKind[] = ['split_expense', 'split_payment'];
 export default function TransactionFormScreen() {
   const { id } = useParams();
   const [params] = useSearchParams();
+  const location = useLocation();
   const editing = useLiveQuery(async () => (id ? ((await db.transactions.get(id)) ?? null) : null), [id]);
   if (id && editing === undefined) return <div className="min-h-dvh bg-bg" />;
-  return <TransactionForm key={id ?? 'new'} existing={editing ?? null} params={params} />;
+  // A widget or shortcut opening "new" again while the form is open starts a fresh form.
+  return <TransactionForm key={id ?? `new-${location.key}`} existing={editing ?? null} params={params} />;
 }
 
 function TransactionForm({ existing, params }: { existing: Transaction | null; params: URLSearchParams }) {
   const { settings, t, locale } = useApp();
   const { book, isSplit, accounts, accountMap, members, me, categoryMap, rate, categoryName, defaultAccount } = useBook();
   const format = useFormat();
-  const { toast } = useFeedback();
+  const { toast, confirm } = useFeedback();
   const goBack = useGoBack('/');
 
   const kinds = isSplit ? SPLIT_KINDS : PERSONAL_KINDS;
@@ -55,9 +64,10 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
     if (existing && kinds.includes(existing.kind as FormKind)) return existing.kind as FormKind;
     return requestedKind && kinds.includes(requestedKind) ? requestedKind : kinds[0]!;
   });
-  const initialAccount = existing ? (existing.accountId ? accountMap.get(existing.accountId) : undefined) : defaultAccount;
+  const requestedAccount = params.get('account');
+  const initialAccount = existing ? (existing.accountId ? accountMap.get(existing.accountId) : undefined) : ((requestedAccount ? accountMap.get(requestedAccount) : undefined) ?? defaultAccount);
   const [accountId, setAccountId] = useState<ID | null>(existing ? existing.accountId : (initialAccount?.id ?? null));
-  const [toAccountId, setToAccountId] = useState<ID | null>(existing?.toAccountId ?? null);
+  const [toAccountId, setToAccountId] = useState<ID | null>(existing?.toAccountId ?? (params.get('toAccount') && accountMap.has(params.get('toAccount')!) ? params.get('toAccount') : null));
   const [currency, setCurrency] = useState(existing?.currency ?? initialAccount?.currency ?? book.currency);
   const [expression, setExpression] = useState(() => {
     if (existing) return expressionFromDecimal(minorToDecimalString(Math.abs(existing.originalAmount), existing.currency));
@@ -73,8 +83,12 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
     const day = params.get('date');
     return day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? withDay(day, Date.now()) : Date.now();
   });
-  const [note, setNote] = useState(existing?.note ?? '');
+  const [note, setNote] = useState(existing?.note ?? params.get('note')?.slice(0, NOTE_MAX) ?? '');
+  const [details, setDetails] = useState(existing?.details ?? '');
+  const [tagIds, setTagIds] = useState<ID[]>(existing?.tagIds ?? []);
   const [photoIds, setPhotoIds] = useState<ID[]>(existing?.photoIds ?? []);
+  const [repeat, setRepeat] = useState<RepeatRule | null>(null);
+  const [installments, setInstallments] = useState(1);
   const [split, setSplit] = useState<SplitDraft>(() => {
     if (existing?.split && existing.kind === 'split_expense') {
       const s = existing.split;
@@ -93,7 +107,8 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   const [quickText, setQuickText] = useState('');
   const [listening, setListening] = useState(false);
   const [typing, setTyping] = useState(false);
-  const [sheet, setSheet] = useState<'date' | 'account' | 'from' | 'to' | 'currency' | 'photos' | 'category' | null>(null);
+  const [keypadOpen, setKeypadOpen] = useState(true);
+  const [sheet, setSheet] = useState<SheetName | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Closing the system keyboard without "done" (Android back) must bring the amount keypad back.
@@ -120,6 +135,29 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
     [],
   );
 
+  // What the user typed so far, to ask before throwing it away.
+  const initial = useRef({ expression, note, details, tags: tagIds.join(), photos: photoIds.join(), categoryId, accountId, date });
+  const dirty =
+    expression !== initial.current.expression ||
+    note.trim() !== initial.current.note.trim() ||
+    details.trim() !== initial.current.details.trim() ||
+    tagIds.join() !== initial.current.tags ||
+    photoIds.join() !== initial.current.photos ||
+    (existing !== null && (categoryId !== initial.current.categoryId || accountId !== initial.current.accountId || date !== initial.current.date));
+
+  const close = async () => {
+    if (dirty && !saved.current) {
+      const discard = await confirm({ title: t('tx.discardTitle'), message: t('tx.discardHint'), confirmLabel: t('tx.discard'), destructive: true });
+      if (!discard) return;
+    }
+    goBack();
+  };
+
+  // Android back: first lower the keypad (more room for the form), then leave — asking if something was filled in.
+  const keypadShown = keypadOpen && !typing;
+  useBackHandler(keypadShown && sheet === null, () => setKeypadOpen(false));
+  useBackHandler(!keypadShown && !typing && dirty && sheet === null, () => void close());
+
   const account = accountId ? accountMap.get(accountId) : undefined;
   const toAccount = toAccountId ? accountMap.get(toAccountId) : undefined;
   const isTransfer = kind === 'transfer';
@@ -129,6 +167,14 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   const decimals = currencyExponent(entryCurrency);
   const evaluated = evaluate(expression);
   const amountMinor = evaluated !== null && evaluated > 0 ? toMinor(evaluated, entryCurrency) : 0;
+
+  const card = kind === 'expense' && account?.type === 'credit' ? account : undefined;
+  const canInstall = Boolean(card) && !existing;
+  const canRepeat = !existing && !isSplitKind;
+  const effectiveInstallments = canInstall ? installments : 1;
+  const effectiveRepeat = canRepeat ? repeat : null;
+  const rule = card ? cardRule(card) : null;
+  const invoice = rule ? cycleOf(dayKey(date), rule) : null;
 
   const bookPreview = useMemo(() => {
     if (entryCurrency === book.currency || amountMinor === 0) return null;
@@ -195,9 +241,22 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
 
   const save = async () => {
     if (saving) return;
-    if (amountMinor <= 0) return fail('tx.amountRequired');
+    if (amountMinor <= 0) {
+      setKeypadOpen(true);
+      return fail('tx.amountRequired');
+    }
     let input: TransactionInput;
-    const base = { id: existing?.id, bookId: book.id, date, note: note.trim(), photoIds, scheduleId: existing?.scheduleId };
+    const base = {
+      id: existing?.id,
+      bookId: book.id,
+      date,
+      note: note.trim(),
+      details,
+      tagIds,
+      photoIds,
+      scheduleId: existing?.scheduleId,
+      ...(existing?.installment ? { installment: existing.installment } : {}),
+    };
 
     if (kind === 'expense' || kind === 'income') {
       if (!categoryId && categoryMap.size > 0) return fail('tx.categoryRequired');
@@ -229,10 +288,24 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       const data: SplitData = { method: 'equal', payerId: fromMember, toMemberId: toMember, parts: [] };
       input = { ...base, kind, currency: book.currency, originalAmount: amountMinor, amount: amountMinor, categoryId: null, accountId: null, accountAmount: 0, toAccountId: null, toAccountAmount: 0, split: data };
     }
+    if (effectiveRepeat && effectiveInstallments > 1) return fail('tx.repeatNotWithInstallments');
 
     setSaving(true);
     try {
-      await saveTransaction(input);
+      let extra: string | null = null;
+      if (effectiveRepeat) {
+        const category = categoryId ? categoryMap.get(categoryId) : undefined;
+        const name = input.note || (kind === 'transfer' ? `${account?.name ?? ''} → ${toAccount?.name ?? ''}` : categoryName(category));
+        await saveRecurringTransaction(input, effectiveRepeat, name);
+        // Past start dates catch up right away.
+        await runDueSchedules();
+        extra = t('tx.repeatSaved', { name: name.slice(0, 25) });
+      } else if (effectiveInstallments > 1) {
+        await saveInstallments(input, effectiveInstallments);
+        extra = t('tx.installmentsSaved', { count: effectiveInstallments });
+      } else {
+        await saveTransaction(input);
+      }
       saved.current = true;
       if (existing) {
         toast(t('tx.saved'), { tone: 'success' });
@@ -240,14 +313,14 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
         const reward = await rewardRecording();
         playSound(reward.reasons.length ? 'coin' : 'save');
         haptic('success');
-        const extra = reward.reasons.includes('milestone')
+        const message = reward.reasons.includes('milestone')
           ? t('garden.milestone', { count: reward.totalRecords })
           : reward.reasons.includes('streak')
             ? t('garden.streak', { count: reward.streak })
             : reward.reasons.includes('first')
               ? t('garden.firstToday')
               : t(`motivation.${1 + (reward.totalRecords % 5)}` as MessageKey);
-        toast(`${extra} ${t('garden.earned', { n: reward.coins })}`, { tone: 'success' });
+        toast(extra ?? `${message} ${t('garden.earned', { n: reward.coins })}`, { tone: 'success' });
       }
       goBack();
     } catch {
@@ -257,12 +330,14 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   };
 
   const kindOptions = kinds.map((k) => ({ value: k, label: t(`kind.${k}` as MessageKey) }));
+  const tagLabel = tagIds.length ? `${t('tags.title')} · ${tagIds.length}` : t('tags.title');
+  const invoiceMonth = invoice ? parseDayKey(invoice.due) : null;
 
   return (
     <div className="flex h-dvh flex-col bg-bg">
       <header className="shrink-0 bg-surface pt-safe">
         <div className="flex h-14 items-center gap-2 px-2">
-          <IconButton icon={X} label={t('common.close')} onClick={goBack} />
+          <IconButton icon={X} label={t('common.close')} onClick={() => void close()} />
           <Segmented className="flex-1" label={t('common.type')} options={kindOptions} value={kind} onChange={changeKind} />
           <span className="w-2" />
         </div>
@@ -363,12 +438,13 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
           ) : (
             <span className="flex h-9 shrink-0 items-center rounded-full bg-surface-2 px-3 text-sm font-semibold text-muted">{entryCurrency}</span>
           )}
-          <div className="min-w-0 flex-1 text-right" aria-live="polite">
-            <div className={cx('truncate font-semibold tabular', hasOperator(expression) ? 'text-lg text-muted' : 'text-[1.9rem] leading-tight')}>
+          <button type="button" onClick={() => setKeypadOpen(true)} className="min-w-0 flex-1 text-right" aria-live="polite">
+            <span className={cx('block truncate font-semibold tabular', hasOperator(expression) ? 'text-lg text-muted' : 'text-[1.9rem] leading-tight')}>
               {expression ? `${currencySymbol(entryCurrency, locale)} ${displayExpression(expression, format.decimalSeparator)}` : `${currencySymbol(entryCurrency, locale)} 0`}
-            </div>
-            {hasOperator(expression) && <div className="truncate text-[1.6rem] leading-tight font-semibold tabular">= {format.money(amountMinor, entryCurrency)}</div>}
-          </div>
+            </span>
+            {hasOperator(expression) && <span className="block truncate text-[1.6rem] leading-tight font-semibold tabular">= {format.money(amountMinor, entryCurrency)}</span>}
+          </button>
+          <IconButton icon={keypadShown ? ChevronDown : Calculator} label={keypadShown ? t('tx.hideKeypad') : t('tx.showKeypad')} onClick={() => setKeypadOpen(!keypadShown)} className="size-9 text-muted" />
         </div>
         {bookPreview !== null && (
           <p className={cx('px-4 pt-0.5 text-right text-xs', bookPreview === 'missing' ? 'text-danger' : 'text-muted')}>
@@ -381,6 +457,7 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
             )}
           </p>
         )}
+        {invoiceMonth && <p className="px-4 pt-0.5 text-right text-xs text-muted">{t('cards.goesTo', { month: format.monthYearShort(invoiceMonth.year, invoiceMonth.month) })}</p>}
 
         <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pt-2.5 pb-1">
           <Chip onClick={() => setSheet('date')}>
@@ -399,9 +476,37 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
               {categoryId ? categoryName(categoryId) : t('common.category')}
             </Chip>
           )}
-          <Chip onClick={() => setSheet('photos')} active={photoIds.length > 0}>
-            <Camera className="size-4" aria-hidden />
-            {photoIds.length > 0 ? photoIds.length : t('tx.photos')}
+          {canInstall && (
+            <Chip onClick={() => setSheet('installments')} active={installments > 1}>
+              <CreditCard className="size-4" aria-hidden />
+              {installments > 1 ? `${installments}x` : t('cards.inFull')}
+            </Chip>
+          )}
+          {existing?.installment && (
+            <Chip active>
+              <CreditCard className="size-4" aria-hidden />
+              {t('tx.installment')} {existing.installment.index}/{existing.installment.count}
+            </Chip>
+          )}
+          {canRepeat && (
+            <Chip onClick={() => setSheet('repeat')} active={Boolean(repeat)}>
+              <Repeat className="size-4" aria-hidden />
+              {repeat ? frequencyLabel(repeat.frequency, t) : t('tx.repeat')}
+            </Chip>
+          )}
+        </div>
+        <div className="flex gap-2 px-4 pt-1.5">
+          <Chip onClick={() => setSheet('tags')} active={tagIds.length > 0} className="min-w-0 flex-auto justify-center px-2.5">
+            <Hash className="size-4 shrink-0" aria-hidden />
+            <span className="truncate">{tagLabel}</span>
+          </Chip>
+          <Chip onClick={() => setSheet('memo')} active={details.trim().length > 0} className="min-w-0 flex-auto justify-center px-2.5">
+            <NotebookPen className="size-4 shrink-0" aria-hidden />
+            <span className="truncate">{t('tx.memo')}</span>
+          </Chip>
+          <Chip onClick={() => setSheet('photos')} active={photoIds.length > 0} className="min-w-0 flex-auto justify-center px-2.5">
+            <Camera className="size-4 shrink-0" aria-hidden />
+            <span className="truncate">{photoIds.length > 0 ? `${t('tx.photos')} · ${photoIds.length}` : t('tx.photos')}</span>
           </Chip>
         </div>
 
@@ -429,7 +534,14 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
           />
         </div>
 
-        {!typing && <Keypad expression={expression} onChange={setExpression} onSubmit={() => void save()} decimals={decimals} decimalSeparator={format.decimalSeparator} full={settings.calculator === 'full'} submitDisabled={saving} />}
+        {keypadShown && <Keypad expression={expression} onChange={setExpression} onSubmit={() => void save()} decimals={decimals} decimalSeparator={format.decimalSeparator} full={settings.calculator === 'full'} submitDisabled={saving} />}
+        {!keypadShown && !typing && (
+          <div className="px-4 pt-3 pb-3">
+            <Button block size="lg" onClick={() => void save()} disabled={saving}>
+              {t('common.save')}
+            </Button>
+          </div>
+        )}
         {typing && <div className="h-2" />}
       </div>
 
@@ -448,6 +560,32 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       <CurrencyPickerSheet open={sheet === 'currency'} onClose={() => setSheet(null)} value={currency} onSelect={setCurrency} />
       <CategoryPickerSheet open={sheet === 'category'} onClose={() => setSheet(null)} kind="expense" value={categoryId} onSelect={(c) => setCategoryId(c?.id ?? null)} allowNone />
       <PhotosSheet open={sheet === 'photos'} onClose={() => setSheet(null)} photoIds={photoIds} onChange={setPhotoIds} onAdded={(pid) => addedPhotos.current.push(pid)} />
+      <TagPickerSheet open={sheet === 'tags'} onClose={() => setSheet(null)} value={tagIds} onChange={setTagIds} />
+      <MemoSheet open={sheet === 'memo'} onClose={() => setSheet(null)} value={details} onChange={setDetails} />
+      {sheet === 'repeat' && (
+        <RepeatSheet
+          open
+          onClose={() => setSheet(null)}
+          value={repeat}
+          onChange={(next) => {
+            setRepeat(next);
+            if (next) setInstallments(1);
+          }}
+        />
+      )}
+      {sheet === 'installments' && (
+        <InstallmentsSheet
+          open
+          onClose={() => setSheet(null)}
+          value={installments}
+          amount={amountMinor}
+          currency={entryCurrency}
+          onChange={(n) => {
+            setInstallments(n);
+            if (n > 1) setRepeat(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -458,7 +596,7 @@ function AccountButton({ label, accountId, onClick }: { label: string; accountId
   const selected = accountId ? accountMap.get(accountId) : undefined;
   return (
     <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl bg-surface p-4 text-left shadow-card active:bg-surface-2">
-      {selected ? <EntityIcon icon={selected.icon} color={selected.color} /> : <EntityIcon icon="wallet" color="#8b93a1" mono={false} />}
+      {selected ? <AccountIcon account={selected} /> : <EntityIcon icon="wallet" color="#8b93a1" mono={false} />}
       <span className="min-w-0 flex-1">
         <span className="block text-xs text-muted">{label}</span>
         <span className="block truncate font-semibold">{selected ? selected.name : t('tx.chooseAccount')}</span>
