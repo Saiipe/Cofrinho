@@ -1,6 +1,6 @@
 import { GripVertical, Trash2 } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { haptic } from '@/services/feedback';
+import { haptic, playSound } from '@/services/feedback';
 import { useT } from '../app/AppContext';
 import { cx } from './primitives';
 
@@ -39,7 +39,10 @@ export function SwipeRow({ children, onDelete, label }: { children: ReactNode; o
       setDragging(false);
       setOffset((value) => {
         const open = value < -ACTION_WIDTH / 2;
-        if (open && g.base === 0) haptic('light');
+        if (open && g.base === 0) {
+          haptic('light');
+          playSound('pop');
+        }
         return open ? -ACTION_WIDTH : 0;
       });
     }
@@ -108,6 +111,7 @@ export function SortableList<T extends { id: string }>({ items, onReorder, rende
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     haptic('medium');
+    playSound('pop');
     setDrag({ id, startY: event.clientY, dy: 0, order: items.map((item) => item.id) });
   };
 

@@ -21,7 +21,7 @@ export function PinPad({ value, onChange, onBiometric, error }: { value: string;
           <span key={i} className={cx('size-3.5 rounded-full border-2', error ? 'border-danger bg-danger' : i < value.length ? 'border-primary bg-primary' : 'border-faint')} />
         ))}
       </div>
-      <div className="grid w-72 grid-cols-3 gap-4">
+      <div className="grid w-72 grid-cols-3 gap-4" data-sound="key">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
           <button key={digit} type="button" onClick={() => press(digit)} aria-label={t('lock.digit', { digit })} className="mx-auto flex size-18 items-center justify-center rounded-full bg-surface-2 text-2xl font-medium active:bg-line">
             {digit}

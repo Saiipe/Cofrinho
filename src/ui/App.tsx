@@ -3,7 +3,9 @@ import { AppProvider } from './app/AppContext';
 import { BookProvider } from './app/BookContext';
 import { LockGate } from './app/LockGate';
 import { FeedbackProvider } from './components/feedback';
+import { LongPressTooltip } from './components/LongPressTooltip';
 import { Splash } from './components/Splash';
+import { TouchSounds } from './components/TouchSounds';
 import { router } from './router';
 import OnboardingScreen from './screens/OnboardingScreen';
 
@@ -16,6 +18,8 @@ export function App() {
             <RouterProvider router={router} />
           </BookProvider>
         </LockGate>
+        <LongPressTooltip />
+        <TouchSounds />
       </FeedbackProvider>
     </AppProvider>
   );

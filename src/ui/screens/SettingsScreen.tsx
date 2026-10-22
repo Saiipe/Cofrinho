@@ -130,7 +130,11 @@ export default function SettingsScreen() {
           <Divider />
           <SwitchRow title={t('settings.quickEntry')} subtitle={t('settings.quickEntryHint')} checked={settings.quickEntry} onChange={set('quickEntry')} />
           <Divider />
-          <SwitchRow title={t('settings.sound')} checked={settings.sound} onChange={set('sound')} />
+          <Row
+            title={t('settings.sound')}
+            subtitle={settings.sound ? t('sounds.summary', { volume: t(`sounds.volume.${settings.soundVolume}`) }) : t('common.off')}
+            to="/settings/sounds"
+          />
           <Divider />
           <SwitchRow title={t('settings.haptics')} checked={settings.haptics} onChange={set('haptics')} />
         </Section>

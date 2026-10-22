@@ -2,7 +2,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { biometricAvailable, disableLock, enableBiometric, enableLock, getLockConfig, LOCK_TIMEOUTS, updateLock, verifyPin, type LockConfig } from '@/services/lock';
 import type { MessageKey } from '@/i18n';
-import { haptic } from '@/services/feedback';
+import { haptic, playSound } from '@/services/feedback';
 import { useApp } from '../app/AppContext';
 import { useFeedback } from '../components/feedback';
 import { Page } from '../components/Page';
@@ -125,6 +125,7 @@ function PinFlowSheet({ flow, onClose, onDone }: { flow: Flow; onClose: () => vo
       }
       if (value !== first) {
         haptic('warning');
+        playSound('error');
         setError(t('lock.mismatch'));
         setFirst(null);
         setPin('');
@@ -137,6 +138,7 @@ function PinFlowSheet({ flow, onClose, onDone }: { flow: Flow; onClose: () => vo
     if (await verifyPin(value)) onDone(flow.then);
     else {
       haptic('warning');
+      playSound('error');
       setError(t('lock.wrong'));
       setPin('');
     }

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  Android 7.0+ · Versão 5.3.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
+  Android 7.0+ · Versão 5.4.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
 </p>
 
 <p align="center"><i>Esta é a foto do software de finanças: o gato da sorte pirata guardando uma moeda dourada — o “cofrinho” do app.</i></p>
@@ -51,7 +51,7 @@ Money Tracker (.apks, Flutter)
 Especificação: 15 tabelas · 26 artigos de ajuda · regras de recorrência, orçamento, divisão…
         │  implementação nova (React + TypeScript + Capacitor)
         ▼
-Cofrinho 5.3.0 — release/Cofrinho-5.3.0.apk
+Cofrinho 5.4.0 — release/Cofrinho-5.4.0.apk
 ```
 
 ## Telas
@@ -113,6 +113,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 | 5.1 | Aviso de novidades depois de cada atualização (changelog no app) |
 | 5.2 | Widget "Cadastro rápido" (3×2) e mini tela para lançar pelo widget sem abrir o app |
 | 5.3 | Cadastro de conta por tipo, compras que já estavam no cartão e barra de botões fixa no lançamento |
+| 5.4 | Sons em todo o app, configuráveis (volume e quais tocar), e correção do balão ao segurar um ícone |
 | próximas | 6.0 investimentos · 7.0 IA com Gemini · 7.1 desafios · 8.0 backup no Google Drive |
 
 ## Funcionalidades
@@ -176,7 +177,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ## Instalar no celular
 
-O APK pronto fica em **`release/Cofrinho-5.3.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
+O APK pronto fica em **`release/Cofrinho-5.4.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
 
 1. Copie o arquivo para o celular (cabo USB, Google Drive, WhatsApp…).
 2. Toque no arquivo e permita **“instalar apps desconhecidos”** para o app usado para abri-lo.

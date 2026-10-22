@@ -2,7 +2,6 @@ import { lazy, Suspense, type ComponentType } from 'react';
 import { createBrowserRouter, Navigate, Outlet, ScrollRestoration } from 'react-router';
 import { BottomNav } from './app/BottomNav';
 import { Lifecycle } from './app/Lifecycle';
-import { LongPressTooltip } from './components/LongPressTooltip';
 import { UpdateNotes } from './components/ReleaseNotes';
 import { PageFallback } from './components/Splash';
 import HomeScreen from './screens/HomeScreen';
@@ -21,7 +20,6 @@ function RootLayout() {
         <Outlet />
       </Suspense>
       <Lifecycle />
-      <LongPressTooltip />
       <UpdateNotes />
       <ScrollRestoration />
     </>
@@ -86,6 +84,7 @@ export const router = createBrowserRouter([
       { path: 'whats-new', element: page(() => import('./screens/WhatsNewScreen')) },
       { path: 'settings', element: page(() => import('./screens/SettingsScreen')) },
       { path: 'settings/lock', element: page(() => import('./screens/LockSettingsScreen')) },
+      { path: 'settings/sounds', element: page(() => import('./screens/SoundSettingsScreen')) },
       { path: 'garden', element: page(() => import('./screens/GardenScreen')) },
       { path: 'about', element: page(() => import('./screens/AboutScreen')) },
       { path: '*', element: <Navigate to="/" replace /> },

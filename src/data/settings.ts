@@ -1,6 +1,7 @@
 import type { NumberStyle } from '@/domain/money';
 import type { ID } from '@/domain/types';
 import { detectLanguage, type Language } from '@/i18n';
+import type { SoundGroup, SoundVolume } from '@/services/feedback';
 import { db } from './db';
 
 export type ThemeId = 'teal' | 'ocean' | 'sunset' | 'rose' | 'grape' | 'sunny' | 'graphite';
@@ -49,6 +50,9 @@ export interface Settings {
   showSubcategories: boolean;
   quickEntry: boolean;
   sound: boolean;
+  /** Sound groups switched off (`false`); the rest play while `sound` is on. */
+  sounds: Partial<Record<SoundGroup, boolean>>;
+  soundVolume: SoundVolume;
   haptics: boolean;
   gardenEntry: boolean;
   onboarded: boolean;
@@ -94,6 +98,8 @@ export const DEFAULT_SETTINGS: Settings = {
   showSubcategories: true,
   quickEntry: true,
   sound: true,
+  sounds: {},
+  soundVolume: 'medium',
   haptics: true,
   gardenEntry: true,
   onboarded: false,

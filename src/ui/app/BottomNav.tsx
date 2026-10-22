@@ -12,6 +12,7 @@ export function BottomNav() {
       to={to}
       end={to === '/'}
       onClick={() => haptic('light')}
+      data-sound="nav"
       className={({ isActive }) => cx('flex flex-1 flex-col items-center justify-center gap-0.5 pt-2 pb-1.5 text-[0.7rem] font-medium', isActive ? 'text-primary' : 'text-faint')}
     >
       {({ isActive }) => (
@@ -31,6 +32,7 @@ export function BottomNav() {
           <button
             type="button"
             aria-label={t('nav.add')}
+            data-sound="pop"
             onClick={() => {
               haptic('medium');
               navigate('/tx/new');

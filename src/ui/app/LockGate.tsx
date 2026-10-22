@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getLockConfig, verifyBiometric, verifyPin, type LockConfig } from '@/services/lock';
-import { haptic } from '@/services/feedback';
+import { haptic, playSound } from '@/services/feedback';
 import { PIN_MIN, PinPad } from '../components/PinPad';
 import { useT } from './AppContext';
 import { AppLogo } from '../components/AppLogo';
@@ -25,6 +25,7 @@ export function LockGate({ children }: { children: ReactNode }) {
   const tryBiometric = useCallback(async () => {
     if (await verifyBiometric(t('app.name'), t('lock.title'))) {
       haptic('success');
+      playSound('success');
       setLocked(false);
     }
   }, [t]);
@@ -65,11 +66,13 @@ export function LockGate({ children }: { children: ReactNode }) {
     if (await verifyPin(value)) {
       attempts.current = 0;
       haptic('success');
+      playSound('success');
       setPin('');
       setLocked(false);
     } else {
       attempts.current++;
       haptic('warning');
+      playSound('error');
       setError(true);
       setTimeout(() => setPin(''), 350);
       if (attempts.current >= MAX_ATTEMPTS) {

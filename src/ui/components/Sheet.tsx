@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { playSound, type Sound } from '@/services/feedback';
 import { useBackHandler } from '../app/back';
 import { useT } from '../app/AppContext';
 import { cx, IconButton } from './primitives';
@@ -18,6 +19,15 @@ function useScrollLock(active: boolean) {
       if (openCount === 0) document.body.style.overflow = '';
     };
   }, [active]);
+}
+
+/** Plays `opening` when the overlay shows and `closing` (if any) however it goes away. */
+function useOverlaySound(active: boolean, opening: Sound, closing?: Sound) {
+  useEffect(() => {
+    if (!active) return;
+    playSound(opening);
+    return closing && (() => playSound(closing));
+  }, [active, opening, closing]);
 }
 
 function useInitialFocus(active: boolean, panel: RefObject<HTMLElement | null>) {
@@ -48,6 +58,7 @@ export function Sheet({ open, onClose, title, children, footer, tall }: SheetPro
   useBackHandler(open, onClose);
   useScrollLock(open);
   useInitialFocus(open, panel);
+  useOverlaySound(open, 'open', 'close');
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
@@ -69,7 +80,7 @@ export function Sheet({ open, onClose, title, children, footer, tall }: SheetPro
             <h2 id={titleId} className="min-w-0 flex-1 truncate text-lg font-semibold">
               {title}
             </h2>
-            <IconButton icon={X} label={t('common.close')} onClick={onClose} />
+            <IconButton icon={X} label={t('common.close')} onClick={onClose} data-sound="none" />
           </div>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
@@ -95,6 +106,7 @@ export function Dialog({ open, onClose, title, children, actions }: DialogProps)
   useBackHandler(open, onClose);
   useScrollLock(open);
   useInitialFocus(open, panel);
+  useOverlaySound(open, 'pop');
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">

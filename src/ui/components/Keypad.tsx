@@ -42,7 +42,6 @@ export function Keypad({ expression, onChange, onSubmit, decimals, decimalSepara
 
   const press = (key: CalcKey) => {
     haptic('light');
-    playSound('tap');
     onChange(pressKey(expression, key, decimals));
   };
 
@@ -51,6 +50,7 @@ export function Keypad({ expression, onChange, onSubmit, decimals, decimalSepara
     pressTimer.current = window.setTimeout(() => {
       longPressed.current = true;
       haptic('medium');
+      playSound('close');
       onChange('');
     }, 550);
   };
@@ -60,7 +60,7 @@ export function Keypad({ expression, onChange, onSubmit, decimals, decimalSepara
   };
 
   return (
-    <div className="grid grid-cols-4 gap-1.5 px-2 pt-1.5 pb-2" role="group" aria-label={t('common.amount')}>
+    <div className="grid grid-cols-4 gap-1.5 px-2 pt-1.5 pb-2" role="group" aria-label={t('common.amount')} data-sound="key">
       {rows.flat().map((key) => {
         if (key === 'ok') {
           return (
@@ -68,6 +68,7 @@ export function Keypad({ expression, onChange, onSubmit, decimals, decimalSepara
               key="ok"
               type="button"
               disabled={submitDisabled}
+              data-sound="tap"
               onClick={() => {
                 haptic('medium');
                 onSubmit();

@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { createTag, normalizeTagName } from '@/data/tags';
 import { normalizeText } from '@/domain/quickEntry';
 import type { ID, Tag } from '@/domain/types';
-import { haptic } from '@/services/feedback';
+import { haptic, playSound } from '@/services/feedback';
 import { useT } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
 import { Sheet } from './Sheet';
@@ -82,6 +82,7 @@ export function TagPickerSheet({ open, onClose, value, onChange }: { open: boole
     if (!name) return;
     const tag = await createTag(book.id, name);
     haptic('success');
+    playSound('success');
     if (!value.includes(tag.id)) onChange([...value, tag.id]);
     setQuery('');
   };
