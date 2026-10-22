@@ -18,6 +18,14 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.6.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Ícone novo', en: 'New icon' },
+    changes: [
+      { kind: 'improvement', text: { 'pt-BR': 'Ícone do app redesenhado: o Gato da Sorte Pirata ganhou tapa-olho de couro com costura e moeda dourada com brilho — na tela do celular, na abertura e dentro do app.', en: 'Redesigned app icon: the Lucky Pirate Cat now has a stitched leather eye patch and a shiny gold coin — on the home screen, the launch screen and inside the app.' } },
+    ],
+  },
+  {
     version: '5.5.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Resumo nos gráficos, investimentos e cadastros prontos', en: 'Chart summary, investments and ready-made defaults' },
