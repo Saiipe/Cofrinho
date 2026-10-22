@@ -40,7 +40,7 @@ export function AppProvider({ children, splash }: { children: ReactNode; splash:
     root.lang = settings.language;
     const surface = getComputedStyle(root).getPropertyValue('--surface').trim();
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', surface || '#ffffff');
-    setFeedbackPreferences({ sound: settings.sound, haptics: settings.haptics });
+    setFeedbackPreferences({ sound: settings.sound, sounds: settings.sounds, soundVolume: settings.soundVolume, haptics: settings.haptics });
   }, [settings, dark]);
 
   const value = useMemo<AppContextValue | null>(

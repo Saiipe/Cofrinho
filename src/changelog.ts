@@ -18,6 +18,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.4.0',
+    date: '2026-10-21',
+    title: { 'pt-BR': 'Sons e dicas nos ícones', en: 'Sounds and icon tips' },
+    changes: [
+      { kind: 'fix', text: { 'pt-BR': 'Tocar e segurar um ícone voltou a mostrar o balão com o nome: o Android assumia o toque antes do balão aparecer. O balão também fica 2 segundos na tela depois de soltar o dedo.', en: 'Touching and holding an icon shows its name again: Android took over the touch before the tip appeared. The tip also stays 2 seconds after you lift your finger.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Sons em todo o app: botões, abas, chaves liga/desliga, menu de baixo, janelas que abrem e fecham, fatias dos gráficos, salvar, apagar, erros, desbloqueio e meta alcançada.', en: 'Sounds across the app: buttons, tabs, switches, the bottom menu, sheets opening and closing, chart slices, saving, deleting, errors, unlocking and reaching a goal.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Sons configuráveis em Configurações › Sons: liga/desliga geral, volume (baixo, médio, alto) e quais sons tocar — botões, teclado, abas e chaves, menu e janelas, dicas, salvar, moedas e metas, apagar e erros —, cada um com ▶ para ouvir.', en: 'Configurable sounds in Settings › Sounds: on/off, volume (low, medium, high) and which sounds play — buttons, keypad, tabs and switches, menu and sheets, tips, saving, coins and goals, deleting and errors — each with ▶ to hear it.' } },
+    ],
+  },
+  {
     version: '5.3.0',
     date: '2026-10-21',
     title: { 'pt-BR': 'Cadastro mais claro', en: 'Clearer forms' },

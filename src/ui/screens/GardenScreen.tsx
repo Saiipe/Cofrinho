@@ -34,6 +34,7 @@ export default function GardenScreen() {
   const onWater = async () => {
     if (garden.coins < WATER_COST) {
       haptic('warning');
+      playSound('error');
       toast(t('garden.notEnough'));
       return;
     }

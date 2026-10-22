@@ -50,10 +50,11 @@ export default function GoalDetailScreen() {
     await addGoalEntry(goal.id, amount);
     const nowSaved = goalSaved({ entries: [...goal.entries, { id: '', date: Date.now(), amount, note: '' }] });
     if (!wasReached && nowSaved >= goal.target) {
-      playSound('coin');
+      playSound('celebrate');
       haptic('success');
       toast(t('goals.reachedToast', { name: goal.name }), { tone: 'success', duration: 5000 });
     } else {
+      if (amount > 0) playSound('coin');
       haptic('success');
       toast(amount > 0 ? t('goals.depositDone', { amount: format.money(amount) }) : t('goals.withdrawDone', { amount: format.money(-amount) }), { tone: 'success' });
     }
@@ -126,7 +127,14 @@ export default function GoalDetailScreen() {
           ) : (
             <Card className="overflow-hidden">
               {entries.map((entry) => (
-                <SwipeRow key={entry.id} label={t('common.delete')} onDelete={() => void removeGoalEntry(goal.id, entry.id)}>
+                <SwipeRow
+                  key={entry.id}
+                  label={t('common.delete')}
+                  onDelete={() => {
+                    playSound('delete');
+                    void removeGoalEntry(goal.id, entry.id);
+                  }}
+                >
                   <div className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-0">
                     <span className={cx('flex size-9 shrink-0 items-center justify-center rounded-full', entry.amount >= 0 ? 'bg-income/14 text-income' : 'bg-surface-2 text-muted')} aria-hidden>
                       {entry.amount >= 0 ? <Plus className="size-4" /> : <Minus className="size-4" />}

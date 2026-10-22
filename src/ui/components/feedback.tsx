@@ -1,6 +1,7 @@
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { playSound } from '@/services/feedback';
 import { useT } from '../app/AppContext';
 import { Dialog } from './Sheet';
 import { Button, cx } from './primitives';
@@ -39,6 +40,8 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   const toast = useCallback<FeedbackContextValue['toast']>(
     (message, options = {}) => {
       const id = nextId.current++;
+      if (options.tone === 'success') playSound('success');
+      else if (options.tone === 'error') playSound('error');
       setToasts((list) => [...list.slice(-2), { id, message, tone: options.tone ?? 'default', action: options.action }]);
       window.setTimeout(() => dismiss(id), options.duration ?? (options.action ? 5000 : 2800));
     },
@@ -94,7 +97,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             <Button variant="secondary" onClick={() => close(false)}>
               {t('common.cancel')}
             </Button>
-            <Button variant={dialog?.destructive ? 'danger' : 'primary'} onClick={() => close(true)} data-autofocus>
+            <Button variant={dialog?.destructive ? 'danger' : 'primary'} onClick={() => close(true)} data-autofocus data-sound={dialog?.destructive ? 'delete' : undefined}>
               {dialog?.confirmLabel ?? t('common.confirm')}
             </Button>
           </>

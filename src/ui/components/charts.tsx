@@ -237,6 +237,7 @@ export function ShareBar({ segments, ariaLabel, onSelect, selected }: { segments
           type="button"
           aria-label={segment.label}
           onClick={() => onSelect?.(segment.key)}
+          data-sound="select"
           className={cx('h-full min-w-[3px] transition-opacity', selected && selected !== segment.key && 'opacity-35')}
           style={{ flexGrow: segment.value, flexBasis: 0, backgroundColor: segment.color }}
         />
@@ -341,6 +342,7 @@ export function DonutChart({
             stroke={arcs[0]!.segment.color}
             strokeWidth={thickness}
             onClick={() => onSelect(arcs[0]!.segment.key)}
+            data-sound="select"
           />
         ) : (
           arcs.map(({ segment, start, end }) => {
@@ -358,6 +360,7 @@ export function DonutChart({
                 opacity={selected && !active ? 0.35 : 1}
                 className="cursor-pointer transition-opacity"
                 onClick={() => onSelect(segment.key)}
+                data-sound="select"
               >
                 <title>{segment.label}</title>
               </path>

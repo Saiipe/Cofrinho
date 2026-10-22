@@ -7,6 +7,18 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.4 — Sons e dicas nos ícones
+
+- **Correção:** tocar e segurar um ícone não mostrava o balão no celular — o Android assume o toque (cerca de 0,4 s) antes do balão aparecer. Agora o balão aparece por esse sinal do Android também, não fica escondido debaixo do dedo nos ícones do topo e continua 2 segundos na tela depois de soltar.
+- **Melhoria:** sons em todo o app, sintetizados (sem arquivos de áudio):
+  - **Toques:** clique em botões e ícones, som de seleção em abas, chips, categorias e fatias dos gráficos, liga/desliga nas chaves, menu de baixo, janelas que sobem e descem, balão de dica e arrastar para apagar ou reordenar.
+  - **Resultados:** salvar, moeda ao guardar dinheiro numa meta, comemoração ao alcançar a meta, apagar (ao confirmar), erro (avisos em vermelho e PIN errado) e desbloqueio.
+  - Um só som por momento: "salvo" seguido do aviso de sucesso toca uma vez.
+- **Melhoria:** sons configuráveis na nova tela *Configurações › Sons*:
+  - **Sons no app:** liga/desliga tudo.
+  - **Volume:** baixo, médio ou alto (toca uma amostra ao trocar).
+  - **Quais sons tocar:** Botões e ícones · Teclado de valores e PIN · Abas, opções e chaves · Menu e janelas · Dicas e gestos · Salvar e concluir · Moedas e metas · Apagar · Erros e avisos — cada um com sua chave e um botão ▶ para ouvir.
+
 ## 5.3 — Cadastro mais claro
 
 - **Melhoria:** o cadastro de conta muda conforme o tipo escolhido, com uma explicação em cada opção:
