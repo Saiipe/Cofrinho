@@ -42,7 +42,7 @@ describe('books', () => {
     const book = await createBook({ name: 'Viagem', type: 'split', currency: 'BRL', color: '#000', members: [{ name: 'Eu', isMe: true }, { name: 'Ana', isMe: false }] });
     const categories = await db.categories.where('bookId').equals(book.id).toArray();
     const food = categories.find((c) => c.builtinKey === 'food')!;
-    expect(categories.filter((c) => c.parentId === food.id).sort((a, b) => a.order - b.order).map((c) => c.builtinKey)).toEqual(['groceries', 'restaurant', 'delivery', 'snacks']);
+    expect(categories.filter((c) => c.parentId === food.id).sort((a, b) => a.order - b.order).map((c) => c.builtinKey)).toEqual(['groceries', 'restaurant', 'delivery', 'snacks', 'bakery', 'fair', 'drinks', 'supplements']);
     expect(categories.some((c) => c.kind === 'income' && c.builtinKey === 'salary')).toBe(true);
     expect(await db.members.where('bookId').equals(book.id).count()).toBe(2);
   });
@@ -162,3 +162,4 @@ describe('import', () => {
     expect(new Set(txs.map((x) => x.accountId)).size).toBe(1);
   });
 });
+

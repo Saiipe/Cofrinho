@@ -83,7 +83,7 @@ export function weekday(key: DayKey): number {
  * with start day 26, "March" runs from Mar 26 to Apr 25.
  */
 export interface Period {
-  kind: 'month' | 'year' | 'all';
+  kind: 'month' | 'year' | 'all' | 'week' | 'custom';
   /** Label year/month: the month in which the period starts. */
   year: number;
   month: number;
@@ -131,6 +131,38 @@ export function yearPeriodOf(key: DayKey, startDay = 1): Period {
 }
 
 /** Everything ever recorded; bounds wide enough for any realistic timestamp. */
+/** 7-day period starting on `weekStart` (0 = Sunday … 6 = Saturday) containing `key`. */
+export function weekPeriodOf(key: DayKey, weekStart = 0): Period {
+  const offset = (weekday(key) - weekStart + 7) % 7;
+  const startKey = addDays(key, -offset);
+  const endKey = addDays(startKey, 7);
+  const { year, month } = parseDayKey(startKey);
+  return buildPeriod('week', year, month, startKey, endKey);
+}
+
+export function shiftWeekPeriod(period: Period, delta: number): Period {
+  const startKey = addDays(period.startKey, delta * 7);
+  const endKey = addDays(startKey, 7);
+  const { year, month } = parseDayKey(startKey);
+  return buildPeriod('week', year, month, startKey, endKey);
+}
+
+/** Custom inclusive day range `[fromKey, toKeyInclusive]`. */
+export function customPeriod(fromKey: DayKey, toKeyInclusive: DayKey): Period {
+  const [startKey, endInclusive] = fromKey <= toKeyInclusive ? [fromKey, toKeyInclusive] : [toKeyInclusive, fromKey];
+  const endKey = addDays(endInclusive, 1);
+  const { year, month } = parseDayKey(startKey);
+  return buildPeriod('custom', year, month, startKey, endKey);
+}
+
+export function shiftCustomPeriod(period: Period, delta: number): Period {
+  const days = Math.max(1, periodDays(period));
+  const startKey = addDays(period.startKey, delta * days);
+  const endKey = addDays(startKey, days);
+  const { year, month } = parseDayKey(startKey);
+  return buildPeriod('custom', year, month, startKey, endKey);
+}
+
 export const ALL_TIME: Period = buildPeriod('all', 1970, 0, '1970-01-01', '2200-01-01');
 
 export function periodDays(period: Period): number {

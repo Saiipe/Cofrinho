@@ -375,23 +375,29 @@ export function CategoryGrid({ kind, value, onSelect, allowNone, compact }: { ki
     );
   }
 
-  const cell = (category: Category, active: boolean, sub = false) => (
-    <button
-      key={category.id}
-      type="button"
-      onClick={() => {
-        if (!sub && settings.showSubcategories && childrenOf(category.id).length) setExpanded((e) => (e === category.id && value === category.id ? null : category.id));
-        onSelect(category);
-      }}
-      aria-pressed={active}
-      className="flex min-w-0 flex-col items-center gap-1.5 rounded-2xl px-1 py-2 active:bg-surface-2"
-    >
-      <span className={cx('rounded-full p-0.5 ring-2', active ? 'ring-primary' : 'ring-transparent')}>
-        <CategoryIcon category={category} size={sub ? 'md' : compact ? 'md' : 'lg'} />
-      </span>
-      <span className={cx('w-full truncate text-center text-[0.75rem] leading-tight', active ? 'font-semibold text-fg' : 'text-muted')}>{categoryName(category)}</span>
-    </button>
-  );
+  const cell = (category: Category, active: boolean, sub = false) => {
+    const fullName = categoryName(category);
+    const parent = sub && category.parentId ? categoryMap.get(category.parentId) : undefined;
+    const tipText = parent ? `${categoryName(parent)} › ${fullName}` : fullName;
+    return (
+      <button
+        key={category.id}
+        type="button"
+        data-tip={tipText}
+        onClick={() => {
+          if (!sub && settings.showSubcategories && childrenOf(category.id).length) setExpanded((e) => (e === category.id && value === category.id ? null : category.id));
+          onSelect(category);
+        }}
+        aria-pressed={active}
+        className="flex min-w-0 flex-col items-center gap-1.5 rounded-2xl px-1 py-2 active:bg-surface-2"
+      >
+        <span className={cx('rounded-full p-0.5 ring-2', active ? 'ring-primary' : 'ring-transparent')}>
+          <CategoryIcon category={category} size={sub ? 'md' : compact ? 'md' : 'lg'} />
+        </span>
+        <span className={cx('w-full truncate text-center text-[0.75rem] leading-tight', active ? 'font-semibold text-fg' : 'text-muted')}>{fullName}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="px-2 pb-3">

@@ -27,7 +27,7 @@ export default function GoalsScreen() {
 
   return (
     <Page title={t('goals.title')} back="/me" actions={<IconButton icon={Plus} label={t('goals.new')} onClick={() => navigate('/goals/new')} />}>
-      {goals && goals.length === 0 ? (
+      {!goals ? null : goals.length === 0 ? (
         <EmptyState icon={GoalIcon} title={t('goals.empty')} hint={t('goals.emptyHint')} action={<LinkButton to="/goals/new">{t('goals.new')}</LinkButton>} />
       ) : (
         <div className="space-y-3 px-4">

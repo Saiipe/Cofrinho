@@ -153,11 +153,11 @@ export default function QuickAddScreen() {
               <IconButton icon={X} label={t('common.close')} onClick={() => void close()} />
             </div>
 
-            <div className="no-scrollbar flex gap-1 overflow-x-auto px-2 pt-3" data-no-tip>
+            <div className="no-scrollbar flex gap-1 overflow-x-auto px-2 pt-3">
               {shortcuts.map((category) => {
                 const active = category.id === categoryId || categoryMap.get(categoryId ?? '')?.parentId === category.id;
                 return (
-                  <button key={category.id} type="button" onClick={() => setCategoryId(category.id)} aria-pressed={active} className="flex w-[4.6rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 active:bg-surface-2">
+                  <button key={category.id} type="button" data-tip={categoryName(category)} onClick={() => setCategoryId(category.id)} aria-pressed={active} className="flex w-[4.6rem] shrink-0 flex-col items-center gap-1 rounded-2xl px-1 py-1.5 active:bg-surface-2">
                     <span className={cx('rounded-full p-0.5 ring-2', active ? 'ring-primary' : 'ring-transparent')}>
                       <CategoryIcon category={category} />
                     </span>

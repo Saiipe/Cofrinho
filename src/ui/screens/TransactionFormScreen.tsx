@@ -359,7 +359,7 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
 
   return (
     <div className="flex h-dvh flex-col bg-bg">
-      <header className="shrink-0 bg-surface pt-safe">
+      <header className="shrink-0 border-b border-line/70 bg-surface pt-safe">
         <div className="flex h-14 items-center gap-2 px-2">
           <IconButton icon={X} label={t('common.close')} onClick={() => void close()} />
           <Segmented className="flex-1" label={t('common.type')} options={kindOptions} value={kind} onChange={changeKind} />
@@ -625,6 +625,7 @@ function ToolButton({ icon: Icon, label, active, onClick, dense }: ToolProps & {
       onClick={onClick}
       disabled={!onClick}
       aria-pressed={active}
+      data-tip={label}
       className={cx(
         'flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl border leading-none font-medium transition-colors disabled:cursor-default',
         // Five buttons on a narrow phone: slightly smaller labels so "Observações" still fits.

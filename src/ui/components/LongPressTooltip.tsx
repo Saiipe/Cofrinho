@@ -86,7 +86,7 @@ export function LongPressTooltip() {
       fired = false;
       hide();
       cancel();
-      if (event.pointerType === 'mouse') return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
       const target = (event.target as Element | null)?.closest?.(SELECTOR);
       if (!(target instanceof HTMLElement) || target.closest('[data-no-tip]')) return;
       const text = (target.dataset.tip ?? target.getAttribute('aria-label') ?? '').trim();
@@ -147,7 +147,7 @@ export function LongPressTooltip() {
   // Position on the outer box, animate the inner one: the pop-in keyframes set `transform` too.
   return createPortal(
     <div className="pointer-events-none fixed z-[110] w-max" style={{ left, top: tip.y, transform: `translate(-50%, ${tip.below ? '0' : '-100%'})` }}>
-      <div role="tooltip" className="max-w-[240px] animate-pop-in rounded-xl bg-fg px-3 py-2 text-center text-[0.85rem] leading-snug font-medium text-bg shadow-xl">
+      <div role="tooltip" className="max-w-[260px] animate-pop-in rounded-xl bg-fg px-3.5 py-2 text-center text-[0.85rem] leading-snug font-medium text-bg shadow-xl">
         {tip.text}
       </div>
     </div>,

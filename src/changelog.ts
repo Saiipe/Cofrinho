@@ -18,6 +18,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.5.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Resumo nos gráficos, investimentos e cadastros prontos', en: 'Chart summary, investments and ready-made defaults' },
+    changes: [
+      { kind: 'feature', text: { 'pt-BR': 'Nova aba "Resumo" em Gráficos com receitas × despesas, saldo e taxa de economia, filtro por Semana, Mês, Ano e Período personalizado (em modal) e visão de calendário integrado na evolução.', en: 'New "Summary" tab in Charts with income vs. expenses, balance and savings rate, filter by Week, Month, Year and custom Period (in a modal) and an inline calendar view in the trend chart.' } },
+      { kind: 'feature', text: { 'pt-BR': 'Contas, categorias, subcategorias e tags já vêm pré-cadastradas (incluindo Reserva de emergência, Investimentos, Vale-Refeição, A receber e A pagar), com guia explicativo na tela de Contas.', en: 'Accounts, categories, subcategories and tags come pre-populated (including Emergency fund, Investments, Meal voucher, Receivable and Payable), with an explanatory guide on the Accounts screen.' } },
+      { kind: 'feature', text: { 'pt-BR': 'Simulador de rendimento (CDI, 1% a.m., Poupança) e atalhos rápidos de Aportar, Resgatar e Lançar rendimento nas contas de investimento, além de atalho de Metas na tela Início.', en: 'Yield simulator (CDI, 1%/mo, Savings) and quick Deposit, Redeem and Record yield actions on investment accounts, plus a Goals strip on the Home screen.' } },
+      { kind: 'fix', text: { 'pt-BR': 'Textos completos nas configurações sem corte por reticências, balão ao segurar categorias, subcategorias e tipos de conta, e correção do espaçamento entre o topo e os cards em todas as telas.', en: 'Full descriptions in settings without ellipsis truncation, long-press tooltips on categories, subcategories and account types, and fixed spacing between the top bar and cards across all screens.' } },
+    ],
+  },
+  {
     version: '5.4.0',
     date: '2026-10-21',
     title: { 'pt-BR': 'Sons e dicas nos ícones', en: 'Sounds and icon tips' },
@@ -118,7 +129,7 @@ export const RELEASES: Release[] = [
     version: '1.4.0',
     date: '2026-10-20',
     title: { 'pt-BR': 'Dicas nos ícones', en: 'Icon tooltips' },
-    changes: [{ kind: 'improvement', text: { 'pt-BR': 'Toque e segure um ícone para ver o que ele faz.', en: 'Touch and hold an icon to see what it does.' } }],
+    changes: [{ kind: 'improvement', text: { 'pt-BR': 'Toque e segurar um ícone para ver o que ele faz.', en: 'Touch and hold an icon to see what it does.' } }],
   },
   {
     version: '1.3.0',

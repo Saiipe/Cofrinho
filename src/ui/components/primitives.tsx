@@ -131,8 +131,8 @@ export function Row({ leading, title, subtitle, trailing, to, onClick, chevron, 
     <>
       {leading && <span className="shrink-0">{leading}</span>}
       <span className="min-w-0 flex-1">
-        <span className={cx('block truncate text-[0.95rem] font-medium', danger ? 'text-danger' : 'text-fg')}>{title}</span>
-        {subtitle && <span className="mt-0.5 block truncate text-[0.8rem] text-muted">{subtitle}</span>}
+        <span className={cx('block leading-snug text-[0.95rem] font-medium break-words', danger ? 'text-danger' : 'text-fg')}>{title}</span>
+        {subtitle && <span className="mt-0.5 block text-[0.8rem] leading-snug text-muted break-words">{subtitle}</span>}
       </span>
       {trailing && <span className="shrink-0 text-right text-sm text-muted">{trailing}</span>}
       {(chevron ?? Boolean(to)) && <ChevronRight className="size-4 shrink-0 text-faint" aria-hidden />}
@@ -303,3 +303,4 @@ export function Badge({ children, tone = 'default' }: { children: ReactNode; ton
   };
   return <span className={cx('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.72rem] font-semibold', tones[tone])}>{children}</span>;
 }
+

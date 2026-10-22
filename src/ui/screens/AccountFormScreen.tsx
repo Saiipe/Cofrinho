@@ -136,6 +136,7 @@ function AccountForm({ existing }: { existing: Account | null }) {
             type="button"
             aria-pressed={active}
             onClick={() => chooseType(value)}
+            data-tip={`${accountTypeLabel(value, t)}: ${t(`accounts.type.${value}.hint` as MessageKey)}`}
             className={cx('flex min-h-16 items-start gap-2.5 rounded-2xl border p-3 text-left', active ? 'border-primary bg-primary-soft' : 'border-line bg-surface active:bg-surface-2')}
           >
             <TypeIcon className={cx('mt-0.5 size-5 shrink-0', active ? 'text-primary' : 'text-muted')} aria-hidden />

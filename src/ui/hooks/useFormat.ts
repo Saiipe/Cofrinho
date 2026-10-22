@@ -82,6 +82,7 @@ export function useFormat(): Formatters {
       dayMonth: (key) => dayMonth.format(keyToDate(key)),
       periodLabel: (period) => {
         if (period.kind === 'year') return String(period.year);
+        if (period.kind === 'week' || period.kind === 'custom') return `${dayMonth.format(keyToDate(period.startKey))} – ${dayMonth.format(keyToDate(addDays(period.endKey, -1)))}`;
         return capitalize(monthYear.format(new Date(period.year, period.month, 15)));
       },
       periodRange: (period) => `${dayMonth.format(keyToDate(period.startKey))} – ${dayMonth.format(keyToDate(addDays(period.endKey, -1)))}`,

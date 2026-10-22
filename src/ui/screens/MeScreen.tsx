@@ -24,29 +24,29 @@ export default function MeScreen() {
   const { t } = useApp();
   const { book, books, isSplit, accounts, tags } = useBook();
   const cardCount = accounts.filter((a) => a.type === 'credit').length;
+  const activeGoalsCount = useLiveQuery(async () => (await db.goals.where('bookId').equals(book.id).toArray()).filter((g) => !g.archived).length, [book.id]);
   const createdAt = useLiveQuery(async () => (await db.transactions.orderBy('createdAt').keys()) as number[], []);
   const stats = recordingStats(createdAt ?? [], todayKey());
 
-  const organize = [
+  const planning = [
     { to: '/books', icon: BookCopy, title: t('me.books'), trailing: String(books.length) },
     ...(isSplit
       ? []
       : [
           { to: '/accounts', icon: Landmark, title: t('me.accounts'), trailing: accounts.length ? String(accounts.length) : undefined },
           { to: '/cards', icon: CreditCard, title: t('me.cards'), trailing: cardCount ? String(cardCount) : undefined },
+          { to: '/budget', icon: Target, title: t('me.budget') },
+          { to: '/goals', icon: Goal, title: t('me.goals'), trailing: activeGoalsCount ? String(activeGoalsCount) : undefined },
         ]),
+  ];
+
+  const organize = [
     { to: '/categories', icon: Shapes, title: t('me.categories') },
     { to: '/tags', icon: Hash, title: t('me.tags'), trailing: tags.length ? String(tags.length) : undefined },
-    ...(isSplit
-      ? []
-      : [
-          { to: '/budget', icon: Target, title: t('me.budget') },
-          { to: '/goals', icon: Goal, title: t('me.goals') },
-          { to: '/recurring', icon: CalendarSync, title: t('me.recurring') },
-        ]),
     { to: '/reminders', icon: BellRing, title: t('me.reminders') },
     { to: '/currencies', icon: Coins, title: t('me.currencies') },
   ];
+
   const tools = [
     ...(isSplit ? [] : [{ to: '/import', icon: ArrowDownToLine, title: t('me.import') }]),
     { to: '/export', icon: ArrowUpFromLine, title: t('me.export') },
@@ -96,6 +96,7 @@ export default function MeScreen() {
             </div>
           </Card>
         </div>
+        <Section title={t('me.planning')}>{list(planning)}</Section>
         <Section title={t('me.organize')}>{list(organize)}</Section>
         <Section title={t('me.tools')}>{list(tools)}</Section>
         <Section title={t('me.app')}>{list(app)}</Section>

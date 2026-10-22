@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  Android 7.0+ · Versão 5.4.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
+  Android 7.0+ · Versão 5.5.0 · APK único (universal) · Português e inglês · Sem login, anúncios ou rastreamento
 </p>
 
 <p align="center"><i>Esta é a foto do software de finanças: o gato da sorte pirata guardando uma moeda dourada — o “cofrinho” do app.</i></p>
@@ -51,7 +51,7 @@ Money Tracker (.apks, Flutter)
 Especificação: 15 tabelas · 26 artigos de ajuda · regras de recorrência, orçamento, divisão…
         │  implementação nova (React + TypeScript + Capacitor)
         ▼
-Cofrinho 5.4.0 — release/Cofrinho-5.4.0.apk
+Cofrinho 5.5.0 — release/Cofrinho-5.5.0.apk
 ```
 
 ## Telas
@@ -114,6 +114,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 | 5.2 | Widget "Cadastro rápido" (3×2) e mini tela para lançar pelo widget sem abrir o app |
 | 5.3 | Cadastro de conta por tipo, compras que já estavam no cartão e barra de botões fixa no lançamento |
 | 5.4 | Sons em todo o app, configuráveis (volume e quais tocar), e correção do balão ao segurar um ícone |
+| 5.5 | Resumo em gráficos com filtro por período e calendário integrado, contas/categorias/tags pré-cadastradas e simulador de investimentos |
 | próximas | 6.0 investimentos · 7.0 IA com Gemini · 7.1 desafios · 8.0 backup no Google Drive |
 
 ## Funcionalidades
@@ -132,8 +133,8 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ### Acompanhamento
 
-- **Início**: despesas, receitas e saldo do mês (ou acumulado), ocultar valores, troca de mês por setas, seletor ou deslize, lista por dia.
-- **Gráficos**: pizza por categoria, ranking, evolução diária/mensal com média, comparação com o período anterior e patrimônio por conta.
+- **Início**: despesas, receitas e saldo do mês (ou acumulado), metas ativas com depósito rápido, ocultar valores, troca de mês por setas, seletor ou deslize, lista por dia.
+- **Gráficos**: aba Resumo (receitas × despesas, saldo e taxa de economia), filtro por Semana, Mês, Ano e Período personalizado, calendário integrado na evolução, pizza por categoria, ranking, comparação com o período anterior e patrimônio por conta.
 - **Relatórios**: resumo do ano, taxa de poupança, receitas × despesas mês a mês e maiores categorias.
 - **Calendário**: valores e intensidade de gasto por dia e orçamento disponível por dia.
 - **Busca** por texto, valor, tipo, categoria, tag, ano e conta, com a soma dos resultados.
@@ -148,8 +149,9 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ### Contas e livros
 
-- Contas: dinheiro, banco, cartão de crédito, carteira digital, investimento, “a receber” e “a pagar”.
+- Contas: dinheiro, banco, cartão de crédito, carteira digital, investimento, “a receber” e “a pagar”, já pré-cadastradas ao criar ou atualizar o livro.
 - Saldo inicial, conta padrão, ajuste de saldo, “não somar nos totais” e ordenação por arrastar.
+- **Investimentos**: atalhos rápidos para Aportar, Resgatar e Lançar rendimento, além de Simulador de rendimento (CDI, 1% a.m., Poupança).
 - **Banco da conta** escolhido na lista oficial do Banco Central (469 instituições, com logos — pacote [logos-bancos-br](https://github.com/rzmt/logos-bancos-br)).
 - **Cartões de crédito**: limite usado/disponível, dia de fechamento e vencimento, fatura de cada mês (aberta, fechada, paga, vencida), próximas faturas e “Pagar fatura”. Ao cadastrar o cartão, dá para lançar as compras que já estão nele (parcelas que faltam e o valor da fatura).
 - Cadastro de conta personalizado para cada tipo (cartão, conta, carteira, investimento, a receber, a pagar).
@@ -177,7 +179,7 @@ Esquema: **primeiro número** = funcionalidades importantes; **segundo número**
 
 ## Instalar no celular
 
-O APK pronto fica em **`release/Cofrinho-5.4.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
+O APK pronto fica em **`release/Cofrinho-5.5.0.apk`** — um arquivo só, para qualquer celular Android 7.0 ou superior.
 
 1. Copie o arquivo para o celular (cabo USB, Google Drive, WhatsApp…).
 2. Toque no arquivo e permita **“instalar apps desconhecidos”** para o app usado para abri-lo.

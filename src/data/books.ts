@@ -1,5 +1,6 @@
-import { DEFAULT_CATEGORIES } from '@/domain/defaults';
-import type { Book, BookType, Category, ID, Member } from '@/domain/types';
+import { DEFAULT_ACCOUNTS, DEFAULT_CATEGORIES, DEFAULT_TAGS } from '@/domain/defaults';
+import type { Account, Book, BookType, Category, ID, Member, Tag } from '@/domain/types';
+import { createTranslator, type Language, type MessageKey } from '@/i18n';
 import { BOOK_TABLES, db, newId } from './db';
 import { getSettings, updateSettings } from './settings';
 
@@ -16,6 +17,39 @@ export function defaultCategories(bookId: ID, now = Date.now()): Category[] {
   return rows;
 }
 
+export function defaultTags(bookId: ID, language: Language = 'pt-BR', now = Date.now()): Tag[] {
+  const t = createTranslator(language);
+  return DEFAULT_TAGS.map((def, order) => ({
+    id: newId(),
+    bookId,
+    name: t(`tag.default.${def.key}` as MessageKey),
+    color: def.color,
+    order,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
+export function defaultAccounts(bookId: ID, currency: string, language: Language = 'pt-BR', now = Date.now()): Account[] {
+  const t = createTranslator(language);
+  return DEFAULT_ACCOUNTS.map((def, order) => ({
+    id: newId(),
+    bookId,
+    name: t(`account.default.${def.key}` as MessageKey),
+    type: def.type,
+    icon: def.icon,
+    color: def.color,
+    currency,
+    initialBalance: 0,
+    excludeFromTotals: false,
+    isDefault: Boolean(def.isDefault),
+    note: t(`account.default.${def.key}.note` as MessageKey),
+    order,
+    createdAt: now,
+    updatedAt: now,
+  }));
+}
+
 export interface NewBookInput {
   name: string;
   type: BookType;
@@ -27,15 +61,111 @@ export interface NewBookInput {
 
 export async function createBook(input: NewBookInput): Promise<Book> {
   const now = Date.now();
-  return db.transaction('rw', [db.books, db.categories, db.members], async () => {
+  const settings = await getSettings();
+  return db.transaction('rw', [db.books, db.categories, db.members, db.tags], async () => {
     const last = await db.books.orderBy('order').last();
     const book: Book = { id: newId(), name: input.name.trim(), type: input.type, currency: input.currency, color: input.color, order: (last?.order ?? -1) + 1, createdAt: now, updatedAt: now };
     await db.books.add(book);
     await db.categories.bulkAdd(defaultCategories(book.id, now));
+    await db.tags.bulkAdd(defaultTags(book.id, settings.language, now));
     if (input.type === 'split' && input.members?.length) {
       await db.members.bulkAdd(input.members.map((m, order) => ({ id: newId(), bookId: book.id, name: m.name.trim(), isMe: m.isMe, order, createdAt: now })));
     }
     return book;
+  });
+}
+
+const DEFAULTS_SEED_KEY = 'defaultsSeededV3';
+
+/** Backfills new built-in categories, subcategories, example tags and default accounts into existing books once. */
+export async function ensureBookDefaults(language: Language = 'pt-BR'): Promise<void> {
+  const done = await db.kv.get(DEFAULTS_SEED_KEY);
+  if (done?.value === true) return;
+  const now = Date.now();
+  await db.transaction('rw', [db.books, db.categories, db.tags, db.accounts, db.kv], async () => {
+    const books = await db.books.toArray();
+    for (const book of books) {
+      const existingCats = await db.categories.where('bookId').equals(book.id).toArray();
+      const newCats: Category[] = [];
+      let nextParentOrder = existingCats.filter((c) => c.parentId === null).reduce((max, c) => Math.max(max, c.order + 1), 0);
+
+      for (const def of DEFAULT_CATEGORIES) {
+        let parent = existingCats.find((c) => c.parentId === null && c.builtinKey === def.key);
+        if (!parent) {
+          parent = {
+            id: newId(),
+            bookId: book.id,
+            kind: def.kind,
+            parentId: null,
+            name: '',
+            builtinKey: def.key,
+            icon: def.icon,
+            color: def.color,
+            order: nextParentOrder++,
+            createdAt: now,
+            updatedAt: now,
+          };
+          newCats.push(parent);
+          existingCats.push(parent);
+        }
+        if (def.children?.length) {
+          let nextChildOrder = existingCats.filter((c) => c.parentId === parent!.id).reduce((max, c) => Math.max(max, c.order + 1), 0);
+          for (const child of def.children) {
+            const exists = existingCats.some((c) => c.builtinKey === child.key);
+            if (!exists) {
+              const row: Category = {
+                id: newId(),
+                bookId: book.id,
+                kind: def.kind,
+                parentId: parent.id,
+                name: '',
+                builtinKey: child.key,
+                icon: child.icon,
+                color: def.color,
+                order: nextChildOrder++,
+                createdAt: now,
+                updatedAt: now,
+              };
+              newCats.push(row);
+              existingCats.push(row);
+            }
+          }
+        }
+      }
+      if (newCats.length) await db.categories.bulkAdd(newCats);
+
+      const existingTags = await db.tags.where('bookId').equals(book.id).toArray();
+      const sampleTags = defaultTags(book.id, language, now);
+      let nextTagOrder = existingTags.reduce((max, tag) => Math.max(max, tag.order + 1), 0);
+      const newTags: Tag[] = [];
+      for (const sample of sampleTags) {
+        const exists = existingTags.some((tag) => tag.name.toLocaleLowerCase() === sample.name.toLocaleLowerCase());
+        if (!exists) {
+          newTags.push({ ...sample, order: nextTagOrder++ });
+        }
+      }
+      if (newTags.length) await db.tags.bulkAdd(newTags);
+
+      if (book.type !== 'split') {
+        const existingAccounts = await db.accounts.where('bookId').equals(book.id).toArray();
+        const sampleAccounts = defaultAccounts(book.id, book.currency, language, now);
+        const hasDefault = existingAccounts.some((acc) => acc.isDefault);
+        let nextAccOrder = existingAccounts.reduce((max, acc) => Math.max(max, acc.order + 1), 0);
+        const newAccounts: Account[] = [];
+        for (const sample of sampleAccounts) {
+          const exists = existingAccounts.some((acc) => acc.name.toLocaleLowerCase() === sample.name.toLocaleLowerCase());
+          if (!exists) {
+            newAccounts.push({
+              ...sample,
+              isDefault: sample.isDefault && !hasDefault,
+              order: nextAccOrder++,
+            });
+          }
+        }
+        if (newAccounts.length) await db.accounts.bulkAdd(newAccounts);
+      }
+    }
+    await db.kv.put({ key: DEFAULTS_SEED_KEY, value: true });
   });
 }
 

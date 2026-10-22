@@ -7,6 +7,16 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.5 — Resumo nos gráficos, investimentos e cadastros prontos
+
+- **Novo:** aba **Resumo** em *Gráficos* com comparativo Receitas × Despesas, saldo do período, taxa de economia, evolução com visão em **Barras** ou **Calendário** integrado e principais categorias.
+- **Novo:** filtro de período nos gráficos por **Semana**, **Mês**, **Ano** e **Período personalizado** (com seletor em modal).
+- **Novo:** contas, categorias, subcategorias e tags já vêm pré-cadastradas (Conta principal, Carteira, Vale-Refeição, Reserva de emergência, Investimentos, Valores a receber e Contas a pagar), inclusive em livros já existentes, com guia *"Como funcionam as contas?"* na tela de Contas.
+- **Novo:** nas contas de **Investimento**, atalhos rápidos para **Aportar**, **Resgatar** e **Lançar rendimento**, além de **Simulador de rendimento** (100% CDI, 110% CDI, 1,0% a.m. e Poupança em 1 mês, 6 meses, 1 ano e 5 anos).
+- **Novo:** faixa de **Metas** direto na tela *Início* para acompanhar o progresso e guardar dinheiro com um toque.
+- **Melhoria:** tocar e segurar categorias, subcategorias, botões da barra de lançamento e tipos de conta mostra um balão com o nome e a explicação completa.
+- **Correção:** textos explicativos nas linhas de configuração não ficam mais cortados com `...`, e o espaçamento entre o cabeçalho e o primeiro card foi corrigido em todas as telas.
+
 ## 5.4 — Sons e dicas nos ícones
 
 - **Correção:** tocar e segurar um ícone não mostrava o balão no celular — o Android assume o toque (cerca de 0,4 s) antes do balão aparecer. Agora o balão aparece por esse sinal do Android também, não fica escondido debaixo do dedo nos ícones do topo e continua 2 segundos na tela depois de soltar.
@@ -33,7 +43,7 @@ O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`sr
   - **Compra parcelada:** informe em quantas vezes e qual parcela vem na fatura; o app lança só as parcelas que faltam, uma por mês, como despesas do cartão.
   - **Compra à vista:** lançada como despesa na fatura escolhida.
   - **Valor da fatura (sem detalhar as compras):** entra na fatura e no limite usado, mas não conta como despesa do mês.
-  - Se uma fatura acabou de fechar e ainda não venceu, dá para escolher em qual fatura cada item está.
+  - Se uma fatura acabou de fechar e ainda venceu, dá para escolher em qual fatura cada item está.
 - **Melhoria:** no cadastro de despesa, "Pago com" (ou "Recebido em") separa cartões e contas, mostra o limite disponível de cada cartão e tem atalho para criar conta ou cartão. Com um cartão escolhido, o valor mostra o disponível e em qual fatura a compra entra.
 - **Correção:** ao marcar "Repetir", o botão ficava cortado no canto da tela do celular. Data e conta agora ficam lado a lado e Repetir, Parcelas, Tags, Observações e Anexos viraram uma barra de botões de largura fixa.
 - Novos cartões não usam mais a "Dívida atual" solta (que não entrava em nenhuma fatura); cartões antigos com esse valor o mostram em Mais opções.
