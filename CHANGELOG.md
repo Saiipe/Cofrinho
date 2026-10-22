@@ -7,6 +7,10 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.6 — Ícone novo
+
+- **Melhoria:** ícone do app redesenhado — o Gato da Sorte Pirata agora tem tapa-olho de couro com costura, alça marrom e moeda dourada com brilho. Vale para o ícone na tela do celular, a abertura do app e o logo dentro do app.
+
 ## 5.5 — Resumo nos gráficos, investimentos e cadastros prontos
 
 - **Novo:** aba **Resumo** em *Gráficos* com comparativo Receitas × Despesas, saldo do período, taxa de economia, evolução com visão em **Barras** ou **Calendário** integrado e principais categorias.

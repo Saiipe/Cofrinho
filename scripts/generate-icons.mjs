@@ -1,5 +1,5 @@
 // Generates every app icon (PWA, Android launcher, Android splash) from the app artwork.
-// Source: icon/Gato Pirata da Moeda Dourada.png (transparent background) composed on ICON_BG;
+// Source: icon/Gato da Sorte Pirata de Moeda Dourada.png (transparent background) composed on ICON_BG;
 // falls back to a vector piggy bank when the artwork is missing.
 // Rasterizes with a locally installed Chromium browser (Edge/Chrome) in headless mode.
 // Usage: node scripts/generate-icons.mjs   (set CHROME_PATH to override the browser)
@@ -10,7 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const ARTWORK = join(root, 'icon', 'Gato Pirata da Moeda Dourada.png');
+const ARTWORK = join(root, 'icon', 'Gato da Sorte Pirata de Moeda Dourada.png');
 /** Background of the artwork's own composition ("Gato Pirata da Sorte"). */
 const ICON_BG = '#4b4d53';
 const SPLASH_BG = '#f6f7f9';
