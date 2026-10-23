@@ -16,4 +16,10 @@
     <color name="shortcut_goals">#7C3AED</color>
     <color name="shortcut_cards">#2563EB</color>
     <color name="widget_chip_bg">#F1F4F7</color>
+    <!-- Gradient widgets (budget, goals, upcoming, wealth). -->
+    <color name="widget_on_gradient">#FFFFFF</color>
+    <color name="widget_on_gradient_muted">#D9FFFFFF</color>
+    <color name="widget_upcoming_accent">#4338CA</color>
+    <color name="widget_wealth_total">#FDE68A</color>
+    <color name="widget_income_on_gradient">#A7F3D0</color>
 </resources>

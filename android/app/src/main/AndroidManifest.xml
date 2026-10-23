@@ -87,6 +87,54 @@
                 android:resource="@xml/widget_summary_info" />
         </receiver>
 
+        <receiver
+            android:name=".BudgetWidget"
+            android:exported="true"
+            android:label="@string/widget_budget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_budget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".GoalsWidget"
+            android:exported="true"
+            android:label="@string/widget_goals_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_goals_info" />
+        </receiver>
+
+        <receiver
+            android:name=".UpcomingWidget"
+            android:exported="true"
+            android:label="@string/widget_upcoming_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_upcoming_info" />
+        </receiver>
+
+        <receiver
+            android:name=".WealthWidget"
+            android:exported="true"
+            android:label="@string/widget_wealth_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_wealth_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

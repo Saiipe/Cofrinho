@@ -95,6 +95,125 @@ final class WidgetRenderer {
         return views;
     }
 
+    // ---------- Gradient widgets: budget, goals, upcoming, wealth ----------
+
+    private static final int[] ROWS = { R.id.widget_row_1, R.id.widget_row_2, R.id.widget_row_3 };
+    private static final int[] NAMES = { R.id.widget_name_1, R.id.widget_name_2, R.id.widget_name_3 };
+    private static final int[] VALUES = { R.id.widget_value_1, R.id.widget_value_2, R.id.widget_value_3 };
+
+    /** The JSON object the app pushed under `key`, or an empty one before the first push. */
+    private static JSONObject data(Context context, String key) {
+        try {
+            return new JSONObject(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(key, "{}"));
+        } catch (JSONException e) {
+            return new JSONObject();
+        }
+    }
+
+    /** Shows the content or the empty message (with the app's own text when it pushed one). */
+    private static void showContent(RemoteViews views, JSONObject json, boolean hasContent) {
+        views.setViewVisibility(R.id.widget_content, hasContent ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_empty, hasContent ? View.GONE : View.VISIBLE);
+        String empty = json.optString("empty");
+        if (!empty.isEmpty()) views.setTextViewText(R.id.widget_empty, empty);
+    }
+
+    static RemoteViews budget(Context context) {
+        JSONObject json = data(context, "budgetJson");
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_budget);
+        views.setOnClickPendingIntent(R.id.widget_root, link(context, HOME + "budget", 20));
+        views.setTextViewText(R.id.widget_title, json.optString("title"));
+        boolean has = json.optBoolean("hasBudget");
+        showContent(views, json, has);
+        if (!has) return views;
+        boolean over = json.optBoolean("over");
+        views.setTextViewText(R.id.widget_budget_label, json.optString("label"));
+        views.setTextViewText(R.id.widget_budget_available, json.optString("available"));
+        views.setTextViewText(R.id.widget_budget_spent, json.optString("spentLine"));
+        views.setTextViewText(R.id.widget_budget_per_day, json.optString("perDay"));
+        views.setProgressBar(R.id.widget_budget_progress, 100, json.optInt("percent"), false);
+        views.setViewVisibility(R.id.widget_budget_progress, over ? View.GONE : View.VISIBLE);
+        views.setViewVisibility(R.id.widget_budget_progress_over, over ? View.VISIBLE : View.GONE);
+        return views;
+    }
+
+    static RemoteViews goals(Context context) {
+        JSONObject json = data(context, "goalsJson");
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_goals);
+        views.setOnClickPendingIntent(R.id.widget_root, link(context, HOME + "goals", 21));
+        JSONArray items = json.optJSONArray("items");
+        int count = items == null ? 0 : items.length();
+        showContent(views, json, count > 0);
+        int[] lines = { R.id.widget_line_1, R.id.widget_line_2, R.id.widget_line_3 };
+        int[] bars = { R.id.widget_progress_1, R.id.widget_progress_2, R.id.widget_progress_3 };
+        for (int i = 0; i < ROWS.length; i++) {
+            JSONObject item = i < count ? items.optJSONObject(i) : null;
+            views.setViewVisibility(ROWS[i], item != null ? View.VISIBLE : View.INVISIBLE);
+            if (item == null) continue;
+            int percent = item.optInt("percent");
+            views.setTextViewText(NAMES[i], item.optString("name"));
+            views.setTextViewText(lines[i], item.optString("line"));
+            views.setTextViewText(VALUES[i], percent + "%");
+            views.setProgressBar(bars[i], 100, percent, false);
+        }
+        return views;
+    }
+
+    static RemoteViews upcoming(Context context) {
+        JSONObject json = data(context, "upcomingJson");
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_upcoming);
+        views.setOnClickPendingIntent(R.id.widget_root, link(context, HOME + "calendar", 22));
+        JSONArray items = json.optJSONArray("items");
+        int count = items == null ? 0 : items.length();
+        showContent(views, json, count > 0);
+        int[] days = { R.id.widget_day_1, R.id.widget_day_2, R.id.widget_day_3 };
+        int[] months = { R.id.widget_month_1, R.id.widget_month_2, R.id.widget_month_3 };
+        int[] lines = { R.id.widget_line_1, R.id.widget_line_2, R.id.widget_line_3 };
+        int income = context.getColor(R.color.widget_income_on_gradient);
+        int plain = context.getColor(R.color.widget_on_gradient);
+        for (int i = 0; i < ROWS.length; i++) {
+            JSONObject item = i < count ? items.optJSONObject(i) : null;
+            views.setViewVisibility(ROWS[i], item != null ? View.VISIBLE : View.INVISIBLE);
+            if (item == null) continue;
+            views.setTextViewText(days[i], item.optString("day"));
+            views.setTextViewText(months[i], item.optString("month"));
+            views.setTextViewText(NAMES[i], item.optString("name"));
+            views.setTextViewText(lines[i], item.optString("when"));
+            views.setTextViewText(VALUES[i], item.optString("amount"));
+            views.setTextColor(VALUES[i], item.optBoolean("income") ? income : plain);
+        }
+        return views;
+    }
+
+    static RemoteViews wealth(Context context) {
+        JSONObject json = data(context, "wealthJson");
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_wealth);
+        views.setOnClickPendingIntent(R.id.widget_root, link(context, HOME + "accounts", 23));
+        showContent(views, json, json.optBoolean("hasAccounts"));
+        views.setTextViewText(R.id.widget_wealth_label, json.optString("label", context.getString(R.string.widget_wealth_total)));
+        views.setTextViewText(R.id.widget_wealth_total, json.optString("total", context.getString(R.string.widget_no_data)));
+        String yield = json.optString("yieldLine");
+        views.setTextViewText(R.id.widget_wealth_yield, yield.isEmpty() ? "" : "↗ " + yield);
+        views.setViewVisibility(R.id.widget_wealth_yield, yield.isEmpty() ? View.GONE : View.VISIBLE);
+        JSONArray items = json.optJSONArray("items");
+        int count = items == null ? 0 : items.length();
+        views.setViewVisibility(R.id.widget_tiles, count > 0 ? View.VISIBLE : View.GONE);
+        for (int i = 0; i < ROWS.length; i++) {
+            JSONObject item = i < count ? items.optJSONObject(i) : null;
+            // Missing tiles collapse so the others share the width.
+            views.setViewVisibility(ROWS[i], item != null ? View.VISIBLE : View.GONE);
+            if (item == null) continue;
+            views.setTextViewText(NAMES[i], item.optString("name"));
+            views.setTextViewText(VALUES[i], item.optString("value"));
+        }
+        return views;
+    }
+
+    private static void update(AppWidgetManager manager, Context context, Class<?> provider, RemoteViews views) {
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, provider));
+        if (ids.length > 0) manager.updateAppWidget(ids, views);
+    }
+
     static void refreshAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] quickIds = manager.getAppWidgetIds(new ComponentName(context, QuickAddWidget.class));
@@ -103,5 +222,9 @@ final class WidgetRenderer {
         if (summaryIds.length > 0) manager.updateAppWidget(summaryIds, summary(context));
         int[] entryIds = manager.getAppWidgetIds(new ComponentName(context, QuickEntryWidget.class));
         if (entryIds.length > 0) manager.updateAppWidget(entryIds, entry(context));
+        update(manager, context, BudgetWidget.class, budget(context));
+        update(manager, context, GoalsWidget.class, goals(context));
+        update(manager, context, UpcomingWidget.class, upcoming(context));
+        update(manager, context, WealthWidget.class, wealth(context));
     }
 }
