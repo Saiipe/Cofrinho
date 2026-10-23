@@ -18,6 +18,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '6.0.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Regra de rendimento nos investimentos', en: 'Yield rules for investments' },
+    changes: [
+      { kind: 'feature', text: { 'pt-BR': 'Cada investimento ganhou uma regra de rendimento: % do CDI (ex.: caixinha a 115% do CDI), % ao ano, % ao mês ou Poupança, com ou sem Imposto de Renda. Basta editar a conta.', en: 'Every investment now has a yield rule: % of CDI (e.g. a savings box at 115% of CDI), % a year, % a month or Poupança, with or without income tax. Just edit the account.' } },
+      { kind: 'feature', text: { 'pt-BR': 'O CDI vem do Banco Central sozinho, uma vez por dia (ou digite outro valor).', en: 'The CDI comes from the Banco Central automatically, once a day (or type another value).' } },
+      { kind: 'feature', text: { 'pt-BR': 'Simulador "Quanto vai render": valor inicial, quanto guardar por mês e prazo, com rendimento bruto, Imposto de Renda e valor final líquido.', en: '"How much it will earn" simulator: starting amount, monthly deposit and period, with gross yield, income tax and the final net amount.' } },
+    ],
+  },
+  {
     version: '5.7.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Recorrentes previstos no calendário', en: 'Recurring forecasts in the calendar' },

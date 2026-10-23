@@ -1,3 +1,5 @@
+import type { YieldRule } from './investment';
+
 export type ID = string;
 
 /** Calendar day in local time, formatted `YYYY-MM-DD`. Sorts lexicographically. */
@@ -84,6 +86,8 @@ export interface Account {
   closingDay?: number;
   /** Credit cards: day of the month the invoice is due (1–31). */
   dueDay?: number;
+  /** Investments: how the money yields ("115% do CDI"), used by the projections. */
+  yieldRule?: YieldRule;
   order: number;
   createdAt: number;
   updatedAt: number;

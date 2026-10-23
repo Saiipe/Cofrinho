@@ -7,6 +7,14 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 6.0 — Regra de rendimento nos investimentos
+
+- **Novo:** cada investimento tem sua **regra de rendimento**, no cadastro da conta (*Como esse investimento rende?*): **% do CDI** (caixinhas, CDB, Tesouro Selic, LCI/LCA), **% ao ano**, **% ao mês**, **Poupança** ou **Não sei**. Também dá para marcar se desconta **Imposto de Renda**. Ex.: caixinha que rende 115% do CDI → escolha "% do CDI" e digite 115; o app mostra na hora que isso dá ≈ 15,85% ao ano.
+- **Novo:** o **CDI** é buscado sozinho no **Banco Central** (uma vez por dia, quando tem internet). Também dá para buscar na hora ou digitar outro valor.
+- **Novo:** a tela do investimento mostra a regra, quanto ele rende por mês com o saldo de hoje e o simulador **Quanto vai render**: valor inicial, quanto guardar por mês e o prazo (1 mês a 10 anos). O resultado traz quanto você guardou, quanto rendeu, o Imposto de Renda (tabela regressiva de 22,5% a 15%, contada para cada depósito) e o valor final líquido.
+- **Melhoria:** o simulador antigo, com 4 taxas fixas, saiu: agora tudo segue a regra do próprio investimento.
+- Investimentos que já existem continuam iguais: é só editar a conta e escolher como ela rende.
+
 ## 5.7 — Recorrentes previstos no calendário
 
 - **Novo:** o calendário mostra os lançamentos recorrentes que ainda vão acontecer, como **previstos**: dias com borda tracejada, valores em cinza e itálico, e a linha marcada "Previsto" na lista do dia. Tocar num previsto abre o recorrente para editar.

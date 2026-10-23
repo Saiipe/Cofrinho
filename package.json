@@ -1,7 +1,7 @@
 {
   "name": "cofrinho",
   "private": true,
-  "version": "5.7.0",
+  "version": "6.0.0",
   "description": "Cofrinho — controle de despesas, receitas, orçamentos e contas. Local-first, PWA e Android.",
   "type": "module",
   "scripts": {
