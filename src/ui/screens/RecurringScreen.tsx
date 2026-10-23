@@ -70,7 +70,11 @@ export default function RecurringScreen() {
                     <span className="shrink-0 text-right">
                       <span className="block font-semibold tabular">{format.money(schedule.amount, schedule.currency)}</span>
                       <span className="block text-xs text-muted">
-                        {schedule.totalCount > 0 ? t('recurring.progress', { done: schedule.runCount, total: schedule.totalCount }) : t('recurring.runs', { count: schedule.runCount })}
+                        {schedule.endDate
+                          ? t('recurring.until', { date: format.date(schedule.endDate) })
+                          : schedule.totalCount > 0
+                            ? t('recurring.progress', { done: schedule.runCount, total: schedule.totalCount })
+                            : t('recurring.runs', { count: schedule.runCount })}
                       </span>
                     </span>
                   </Link>

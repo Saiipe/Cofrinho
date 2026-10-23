@@ -6,8 +6,8 @@ import { db } from '@/data/db';
 import { deleteSchedule, runDueSchedules, saveSchedule } from '@/data/schedules';
 import { dayKey, todayKey, withDay } from '@/domain/dates';
 import { NOTE_MAX } from '@/domain/defaults';
-import { dueOccurrences, FREQUENCIES, initialLastRun, MAX_RUN_COUNT, nextOccurrence, recomputeLastRun, RUN_COUNT_PRESETS, SCHEDULE_NAME_MAX } from '@/domain/schedule';
-import type { Frequency, ID, Schedule } from '@/domain/types';
+import { dueOccurrences, FREQUENCIES, initialLastRun, MAX_RUN_COUNT, nextOccurrence, recomputeLastRun, runsUntil, SCHEDULE_NAME_MAX } from '@/domain/schedule';
+import type { DayKey, Frequency, ID, Schedule } from '@/domain/types';
 import { frequencyLabel } from '@/i18n/labels';
 import type { MessageKey } from '@/i18n';
 import { useApp } from '../app/AppContext';
@@ -18,6 +18,7 @@ import { InlineNotice, useFeedback } from '../components/feedback';
 import { Page, useGoBack } from '../components/Page';
 import { AccountPickerSheet, CategoryPickerSheet, CurrencyPickerSheet, DatePickerSheet } from '../components/pickers';
 import { Button, Card, Chip, Divider, Row, Segmented, SwitchRow, TextField } from '../components/primitives';
+import { RepeatEndPicker } from '../components/TransactionExtras';
 import { useFormat } from '../hooks/useFormat';
 
 type Kind = Schedule['kind'];
@@ -47,7 +48,7 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
   const [frequency, setFrequency] = useState<Frequency>(existing?.frequency ?? 'monthly');
   const [startDate, setStartDate] = useState(existing?.startDate ?? todayKey());
   const [count, setCount] = useState(existing?.totalCount ?? 0);
-  const [customCount, setCustomCount] = useState(existing && !RUN_COUNT_PRESETS.includes(existing.totalCount) ? String(existing.totalCount) : '');
+  const [endDate, setEndDate] = useState<DayKey | null>(existing?.endDate ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [paused, setPaused] = useState(existing?.status === 'paused');
   // New plans record the start date (and any dates since) right away, so they show up in the list at once.
@@ -66,8 +67,8 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
   const ruleChanged = existing && (existing.frequency !== frequency || existing.startDate !== startDate || existing.totalCount !== count);
   const canBackfill = !existing && startDate <= today;
   const lastRun = existing ? (ruleChanged ? recomputeLastRun(rule, existing.lastRunDate, today) : existing.lastRunDate) : canBackfill && backfill ? null : initialLastRun(rule, today);
-  const next = nextOccurrence({ ...rule, lastRunDate: lastRun, totalCount: count, runCount: existing?.runCount ?? 0 });
-  const backfillCount = canBackfill ? dueOccurrences({ ...rule, lastRunDate: null, totalCount: count, runCount: 0 }, today).length : 0;
+  const next = nextOccurrence({ ...rule, lastRunDate: lastRun, totalCount: count, runCount: existing?.runCount ?? 0, endDate });
+  const backfillCount = canBackfill ? dueOccurrences({ ...rule, lastRunDate: null, totalCount: count, runCount: 0, endDate }, today).length : 0;
 
   const fail = (key: MessageKey) => {
     setError(t(key));
@@ -81,6 +82,7 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
     if (kind === 'transfer' && (!account || !toAccount)) return fail('tx.accountsRequired');
     if (kind === 'transfer' && account?.id === toAccount?.id) return fail('tx.sameAccount');
     if (count > MAX_RUN_COUNT) return fail('recurring.countMax');
+    if (endDate && runsUntil(rule, endDate) === 0) return fail('repeat.endBeforeStart');
     await saveSchedule({
       id: existing?.id,
       bookId: book.id,
@@ -94,7 +96,8 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
       amount,
       currency: entryCurrency,
       toAmount: needsToAmount ? toAmount : null,
-      totalCount: count,
+      totalCount: endDate ? 0 : count,
+      ...(endDate ? { endDate } : {}),
       note,
       paused,
       backfill: canBackfill && backfill,
@@ -179,36 +182,15 @@ function RecurringForm({ existing }: { existing: Schedule | null }) {
           </div>
         </div>
 
-        <div>
-          <p className="mb-2 text-sm font-medium text-muted">{t('recurring.count')}</p>
-          <div className="flex flex-wrap items-center gap-2">
-            {RUN_COUNT_PRESETS.map((n) => (
-              <Chip
-                key={n}
-                active={count === n && !customCount}
-                onClick={() => {
-                  setCount(n);
-                  setCustomCount('');
-                }}
-              >
-                {n === 0 ? t('recurring.unlimited') : t('recurring.countTimes', { count: n })}
-              </Chip>
-            ))}
-            <input
-              inputMode="numeric"
-              value={customCount}
-              onChange={(e) => {
-                const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
-                setCustomCount(digits);
-                if (digits) setCount(Math.min(MAX_RUN_COUNT, Math.max(1, Number(digits))));
-              }}
-              placeholder={t('recurring.countCustom')}
-              aria-label={t('recurring.countCustom')}
-              className="h-9 w-24 rounded-full border border-line bg-surface px-3 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-muted">{t('recurring.countMax', { max: MAX_RUN_COUNT })}</p>
-        </div>
+        <RepeatEndPicker
+          rule={rule}
+          count={count}
+          endDate={endDate}
+          onChange={(end) => {
+            setCount(end.count);
+            setEndDate(end.endDate);
+          }}
+        />
 
         <TextField label={`${t('common.note')} (${t('common.optional')})`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={NOTE_MAX} />
 

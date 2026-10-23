@@ -121,6 +121,18 @@ describe('recurring runner', () => {
     expect(await runDueSchedules(new Date(2026, 4, 1, 10).getTime())).toEqual([]);
   });
 
+  it('stops at the end date and completes the plan', async () => {
+    const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
+    const id = await saveSchedule(
+      { bookId: book.id, name: 'Curso', kind: 'expense', categoryId: null, accountId: null, toAccountId: null, frequency: 'monthly', startDate: '2026-01-10', endDate: '2026-03-10', amount: 20_000, currency: 'BRL', toAmount: null, totalCount: 0, note: '', paused: false, backfill: true },
+      '2026-01-10',
+    );
+    const runs = await runDueSchedules(new Date(2026, 4, 1, 9).getTime());
+    expect(runs[0]!.created.map((tx) => new Date(tx.date).getMonth())).toEqual([0, 1, 2]);
+    expect(await db.schedules.get(id)).toMatchObject({ runCount: 3, status: 'completed', endDate: '2026-03-10' });
+    expect(await forecastTransactions(book.id, '2026-02-15')).toEqual([]);
+  });
+
   it('forecasts runs up to the end of next month without storing them', async () => {
     const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
     const id = await saveSchedule(

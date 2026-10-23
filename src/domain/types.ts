@@ -226,6 +226,8 @@ export interface Schedule {
   toAmount: Minor | null;
   /** Total runs allowed; 0 means unlimited. */
   totalCount: number;
+  /** Last day a run may fall on (inclusive); absent = no end date. Used instead of `totalCount`. */
+  endDate?: DayKey;
   runCount: number;
   lastRunDate: DayKey | null;
   status: ScheduleStatus;

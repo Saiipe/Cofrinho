@@ -1,8 +1,8 @@
 import { installmentDates, splitInstallments } from '@/domain/card';
 import { dayKey, type Period } from '@/domain/dates';
 import { DETAILS_MAX, NOTE_MAX } from '@/domain/defaults';
-import { SCHEDULE_NAME_MAX, statusForCount } from '@/domain/schedule';
-import type { Frequency, ID, Schedule, Transaction } from '@/domain/types';
+import { SCHEDULE_NAME_MAX, statusFor } from '@/domain/schedule';
+import type { DayKey, Frequency, ID, Schedule, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 
 export type TransactionInput = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'> & { id?: ID };
@@ -67,6 +67,8 @@ export interface RepeatRule {
   frequency: Frequency;
   /** Total runs including this first one; 0 = unlimited. */
   totalCount: number;
+  /** Last day a run may fall on (inclusive); replaces `totalCount` when set. */
+  endDate?: DayKey;
 }
 
 /**
@@ -91,10 +93,11 @@ export async function saveRecurringTransaction(input: TransactionInput, repeat: 
     amount: tx.originalAmount,
     currency: tx.currency,
     toAmount: input.kind === 'transfer' && tx.toAccountId ? tx.toAccountAmount : null,
-    totalCount: repeat.totalCount,
+    totalCount: repeat.endDate ? 0 : repeat.totalCount,
+    ...(repeat.endDate ? { endDate: repeat.endDate } : {}),
     runCount: 1,
     lastRunDate: startDate,
-    status: statusForCount('active', repeat.totalCount, 1),
+    status: statusFor('active', { frequency: repeat.frequency, startDate, lastRunDate: startDate, totalCount: repeat.endDate ? 0 : repeat.totalCount, runCount: 1, endDate: repeat.endDate }),
     note: tx.note,
     tagIds: tx.tagIds,
     createdAt: now,
