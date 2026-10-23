@@ -7,6 +7,13 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 5.7 — Recorrentes previstos no calendário
+
+- **Novo:** o calendário mostra os lançamentos recorrentes que ainda vão acontecer, como **previstos**: dias com borda tracejada, valores em cinza e itálico, e a linha marcada "Previsto" na lista do dia. Tocar num previsto abre o recorrente para editar.
+- **Novo:** regra de previsão: os previstos aparecem só até o **fim do mês que vem**. Passando disso, o calendário avisa até quando vai a previsão.
+- **Novo:** o resumo do mês mostra quanto **ainda está previsto** de despesas e receitas.
+- Previsto não é lançamento: não entra no saldo, nos gráficos nem no orçamento, e não precisa recadastrar nada — vale para os recorrentes que já existem. Ele vira lançamento de verdade quando a data chega e o app é aberto, como antes.
+
 ## 5.6 — Ícone novo
 
 - **Melhoria:** ícone do app redesenhado — o Gato da Sorte Pirata agora tem tapa-olho de couro com costura, alça marrom e moeda dourada com brilho. Vale para o ícone na tela do celular, a abertura do app e o logo dentro do app.

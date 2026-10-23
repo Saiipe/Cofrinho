@@ -1,4 +1,4 @@
-import { addDays, addMonthsClamped, daysBetween, monthsBetween } from './dates';
+import { addDays, addMonthsClamped, daysBetween, makeDayKey, monthsBetween, parseDayKey } from './dates';
 import type { DayKey, Frequency, ScheduleStatus } from './types';
 
 /**
@@ -96,6 +96,35 @@ export function dueOccurrences(state: RunState, today: DayKey, limit = 1000): Da
 export function nextOccurrence(state: RunState): DayKey | null {
   if (remainingRuns(state) === 0) return null;
   return occurrence(state, firstIndexAfter(state, state.lastRunDate));
+}
+
+/**
+ * Forecast rule ("previsão"): the calendar shows the runs a plan will still record, but only up to the
+ * end of the month after the current one — far enough to plan the next month without inventing a
+ * long future. Forecasts are never stored; they are recomputed from the plan on every view.
+ */
+export const FORECAST_MONTHS_AHEAD = 1;
+
+/** Last day shown in forecasts: the end of the month `monthsAhead` months after today's month. */
+export function forecastHorizon(today: DayKey, monthsAhead = FORECAST_MONTHS_AHEAD): DayKey {
+  const { year, month } = parseDayKey(today);
+  return addDays(addMonthsClamped(makeDayKey(year, month, 1), monthsAhead + 1), -1);
+}
+
+/**
+ * Runs still to be recorded after today, up to `horizon` (inclusive), within the run limit.
+ * Runs due today or earlier are left out: they are recorded for real when the app opens.
+ */
+export function forecastOccurrences(state: RunState, today: DayKey, horizon: DayKey): DayKey[] {
+  const forecast: DayKey[] = [];
+  let remaining = remainingRuns(state);
+  for (let i = firstIndexAfter(state, state.lastRunDate); remaining > 0; i++) {
+    const date = occurrence(state, i);
+    if (date > horizon) break;
+    remaining--;
+    if (date > today) forecast.push(date);
+  }
+  return forecast;
 }
 
 /** Last-run marker for a new plan: periods that already ended are not backfilled, today still runs. */

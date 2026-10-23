@@ -198,6 +198,9 @@ export const en: Record<MessageKey, string> = {
   'calendar.perDay': 'Available per day',
   'calendar.overBudget': 'Over budget',
   'calendar.withinBudget': 'Within budget',
+  'calendar.forecast': 'Forecast',
+  'calendar.forecastMonth': 'Still expected this month',
+  'calendar.forecastLimit': 'Recurring records show as forecasts only up to {month}.',
 
   'charts.title': 'Charts',
   'charts.month': 'Month',
@@ -443,7 +446,7 @@ export const en: Record<MessageKey, string> = {
   'recurring.pause': 'Pause',
   'recurring.resume': 'Resume',
   'recurring.next': 'Next: {date}',
-  'recurring.hint': 'Records are created automatically on their dates whenever the app opens, including any that were pending. Tip: you can also turn on "Repeat" right when adding an expense or income.',
+  'recurring.hint': 'Records are created automatically on their dates whenever the app opens, including any that were pending. In the calendar, upcoming ones show as forecasts until the end of next month. Tip: you can also turn on "Repeat" right when adding an expense or income.',
   'recurring.ran': '{name}: {amount} recorded',
   'recurring.empty': 'No recurring records',
   'recurring.emptyHint': 'Automate rent, salary, subscriptions and other fixed bills.',
