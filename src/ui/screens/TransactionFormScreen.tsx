@@ -4,7 +4,7 @@ import { Link, useLocation, useParams, useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/data/db';
 import { discardPhotos } from '@/data/photos';
-import { runDueSchedules } from '@/data/schedules';
+import { applyToSchedule, endSchedule, runDueSchedules, updateScheduleRule } from '@/data/schedules';
 import { saveInstallments, saveRecurringTransaction, saveTransaction, suggestNotes, type RepeatRule, type TransactionInput } from '@/data/transactions';
 import { resolveAmounts } from '@/domain/amounts';
 import { cardRule, cycleOf } from '@/domain/card';
@@ -89,7 +89,13 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
   const [details, setDetails] = useState(existing?.details ?? '');
   const [tagIds, setTagIds] = useState<ID[]>(existing?.tagIds ?? []);
   const [photoIds, setPhotoIds] = useState<ID[]>(existing?.photoIds ?? []);
+  // A record created by a recurring plan edits that plan's rule; any other record can start one.
+  const plan = useLiveQuery(async () => (existing?.scheduleId ? ((await db.schedules.get(existing.scheduleId)) ?? null) : null), [existing?.scheduleId]);
   const [repeat, setRepeat] = useState<RepeatRule | null>(null);
+  const [repeatTouched, setRepeatTouched] = useState(false);
+  useEffect(() => {
+    if (plan && !repeatTouched) setRepeat({ frequency: plan.frequency, totalCount: plan.totalCount, endDate: plan.endDate });
+  }, [plan, repeatTouched]);
   const [installments, setInstallments] = useState(1);
   const [split, setSplit] = useState<SplitDraft>(() => {
     if (existing?.split && existing.kind === 'split_expense') {
@@ -172,7 +178,8 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
 
   const card = kind === 'expense' && account?.type === 'credit' ? account : undefined;
   const canInstall = Boolean(card) && !existing;
-  const canRepeat = !existing && !isSplitKind;
+  // Installments are their own monthly plan, so they never repeat on top.
+  const canRepeat = !isSplitKind && !existing?.installment && (!existing?.scheduleId || plan !== undefined);
   const effectiveInstallments = canInstall ? installments : 1;
   const effectiveRepeat = canRepeat ? repeat : null;
   const rule = card ? cardRule(card) : null;
@@ -295,13 +302,46 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       input = { ...base, kind, currency: book.currency, originalAmount: amountMinor, amount: amountMinor, categoryId: null, accountId: null, accountAmount: 0, toAccountId: null, toAccountAmount: 0, split: data };
     }
     if (effectiveRepeat && effectiveInstallments > 1) return fail('tx.repeatNotWithInstallments');
-    // This record is the first run, so an end date must leave at least one more.
-    if (effectiveRepeat?.endDate && runsUntil({ frequency: effectiveRepeat.frequency, startDate: dayKey(date) }, effectiveRepeat.endDate) < 2) return fail('repeat.endTooSoon');
+    // A new plan starts with this record, so an end date must leave at least one more run.
+    if (!plan && effectiveRepeat?.endDate && runsUntil({ frequency: effectiveRepeat.frequency, startDate: dayKey(date) }, effectiveRepeat.endDate) < 2) return fail('repeat.endTooSoon');
+
+    // Editing what a plan records: ask whether the next runs follow ("this and next" or "only this").
+    const edited =
+      existing &&
+      (input.kind !== existing.kind ||
+        input.originalAmount !== existing.originalAmount ||
+        input.currency !== existing.currency ||
+        input.categoryId !== existing.categoryId ||
+        input.accountId !== existing.accountId ||
+        input.toAccountId !== existing.toAccountId ||
+        input.note !== existing.note);
+    const applyToNext =
+      plan && effectiveRepeat && plan.status !== 'completed' && edited
+        ? await confirm({ title: t('tx.applyToNextTitle'), message: t('tx.applyToNextHint', { name: plan.name }), confirmLabel: t('tx.applyToNext'), cancelLabel: t('tx.onlyThis') })
+        : false;
 
     setSaving(true);
     try {
       let extra: string | null = null;
-      if (effectiveRepeat) {
+      if (plan) {
+        await saveTransaction(input);
+        if (repeatTouched && !effectiveRepeat) {
+          await endSchedule(plan.id);
+          extra = t('tx.repeatEnded');
+        } else if (
+          repeatTouched &&
+          effectiveRepeat &&
+          (effectiveRepeat.frequency !== plan.frequency || effectiveRepeat.totalCount !== plan.totalCount || (effectiveRepeat.endDate ?? null) !== (plan.endDate ?? null))
+        ) {
+          await updateScheduleRule(plan.id, effectiveRepeat);
+          await runDueSchedules();
+          extra = t('tx.repeatUpdated');
+        }
+        if (applyToNext) {
+          await applyToSchedule(plan.id, input);
+          extra = t('tx.appliedToNext');
+        }
+      } else if (effectiveRepeat) {
         const category = categoryId ? categoryMap.get(categoryId) : undefined;
         const name = input.note || (kind === 'transfer' ? `${account?.name ?? ''} → ${toAccount?.name ?? ''}` : categoryName(category));
         await saveRecurringTransaction(input, effectiveRepeat, name);
@@ -316,7 +356,7 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       }
       saved.current = true;
       if (existing) {
-        toast(t('tx.saved'), { tone: 'success' });
+        toast(extra ?? t('tx.saved'), { tone: 'success' });
       } else {
         const reward = await rewardRecording();
         playSound(reward.reasons.length ? 'coin' : 'save');
@@ -573,10 +613,13 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
         <RepeatSheet
           open
           onClose={() => setSheet(null)}
-          startDate={dayKey(date)}
+          startDate={plan?.startDate ?? dayKey(date)}
+          minCount={plan ? Math.max(1, plan.runCount) : 2}
+          existingPlan={Boolean(plan)}
           value={repeat}
           onChange={(next) => {
             setRepeat(next);
+            setRepeatTouched(true);
             if (next) setInstallments(1);
           }}
         />

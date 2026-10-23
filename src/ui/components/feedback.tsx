@@ -19,6 +19,8 @@ interface ConfirmOptions {
   title: string;
   message?: ReactNode;
   confirmLabel?: string;
+  /** Label of the second button, when it is a choice rather than "Cancelar" (resolves false). */
+  cancelLabel?: string;
   destructive?: boolean;
 }
 
@@ -95,7 +97,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         actions={
           <>
             <Button variant="secondary" onClick={() => close(false)}>
-              {t('common.cancel')}
+              {dialog?.cancelLabel ?? t('common.cancel')}
             </Button>
             <Button variant={dialog?.destructive ? 'danger' : 'primary'} onClick={() => close(true)} data-autofocus data-sound={dialog?.destructive ? 'delete' : undefined}>
               {dialog?.confirmLabel ?? t('common.confirm')}

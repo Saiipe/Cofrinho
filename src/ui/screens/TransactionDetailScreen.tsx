@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { db } from '@/data/db';
 import { deleteInstallmentGroup, deleteTransaction, duplicateTransaction } from '@/data/transactions';
-import { kindLabel } from '@/i18n/labels';
+import { frequencyLabel, kindLabel } from '@/i18n/labels';
 import type { MessageKey } from '@/i18n';
 import { useApp } from '../app/AppContext';
 import { useBook } from '../app/BookContext';
@@ -16,6 +16,7 @@ import { PhotoThumb, PhotoViewer } from '../components/photos';
 import { Button, Card, Divider, EmptyState, IconButton, Row } from '../components/primitives';
 import { Sheet } from '../components/Sheet';
 import { TagList } from '../components/tags';
+import { scheduleEndLabel } from '../components/TransactionExtras';
 import { useFormat } from '../hooks/useFormat';
 
 export default function TransactionDetailScreen() {
@@ -161,7 +162,17 @@ export default function TransactionDetailScreen() {
           {schedule && (
             <>
               <Divider />
-              <Row title={t('tx.generatedBy', { name: schedule.name })} to={`/recurring/${schedule.id}/edit`} />
+              <Row
+                title={t('tx.generatedBy', { name: schedule.name })}
+                subtitle={[
+                  frequencyLabel(schedule.frequency, t),
+                  scheduleEndLabel(schedule, t, format),
+                  schedule.status === 'completed' ? t('recurring.completed') : schedule.status === 'paused' ? t('recurring.paused') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                to={`/recurring/${schedule.id}/edit`}
+              />
             </>
           )}
         </Card>

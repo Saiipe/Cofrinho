@@ -7,6 +7,14 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 6.4 — Repetir também ao editar
+
+- **Correção:** ao editar um lançamento, o botão **Repetir** não aparecia. Agora ele aparece sempre (menos em parcelas e despesas do grupo):
+  - Em um lançamento **recorrente**, mostra a regra atual (ex.: "Todo mês", "12 vezes") e permite mudar a frequência e **quando termina**. "Não repete" encerra a repetição sem apagar os lançamentos já feitos.
+  - Em um lançamento **comum**, dá para transformá-lo em recorrente a partir da data dele.
+- **Novo:** ao mudar valor, categoria, conta ou descrição de um lançamento recorrente, o app pergunta **"Mudar também os próximos?"** — *Este e os próximos* ou *Só este*.
+- **Melhoria:** o detalhe do lançamento mostra a regra do recorrente ("Todo mês · 1 de 12", "até 22 de out. de 2027" ou "Sem data para acabar"), com o mesmo texto da tela de Recorrentes.
+
 ## 6.3 — Widgets novos
 
 - **Novo:** quatro widgets coloridos, com fundo em degradê, para a tela inicial (*Perfil › Widgets e atalhos*):
