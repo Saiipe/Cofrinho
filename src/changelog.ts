@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '6.2.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Quando termina a repetição', en: 'When a repetition ends' },
+    changes: [
+      { kind: 'feature', text: { 'pt-BR': 'Repetir lançamento e Recorrentes ganharam "Quando termina?": sem data para acabar, depois de X vezes ou em uma data, mostrando o último lançamento e o total de vezes.', en: 'Repeat and Recurring now ask "When does it end?": never, after X times or on a date, showing the last record and the total count.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Com data final, o recorrente para sozinho e fica como Concluído; os já cadastrados continuam iguais.', en: 'With an end date the plan stops on its own and shows as Completed; existing plans stay the same.' } },
+    ],
+  },
+  {
     version: '6.1.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Correções: nomes das contas e menu ao segurar', en: 'Fixes: account names and the hold menu' },

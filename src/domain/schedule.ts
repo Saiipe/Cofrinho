@@ -7,7 +7,8 @@ import type { DayKey, Frequency, ScheduleStatus } from './types';
  * Rules (mirroring the behavior documented by the original app):
  * - Occurrences are anchored on the start date: monthly plans run on the start day of month
  *   (clamped to short months), weekly plans on the start weekday, and so on.
- * - A run is due when: start ≤ date, date > last run, date ≤ today, and the run limit is not reached.
+ * - A run is due when: start ≤ date, date > last run, date ≤ today, and neither the run limit nor
+ *   the end date (inclusive) is reached. A plan ends by count, by date, or never.
  * - Runs only happen while the app is open; missed dates are caught up on the next open,
  *   each dated on its own occurrence.
  * - Creating a plan never backfills periods that already ended; editing frequency, start date
@@ -49,7 +50,11 @@ export interface RunState extends Recurrence {
   lastRunDate: DayKey | null;
   totalCount: number;
   runCount: number;
+  /** Last day a run may fall on (inclusive); absent = no end date. */
+  endDate?: DayKey | null;
 }
+
+const beforeEnd = (state: Pick<RunState, 'endDate'>, date: DayKey) => !state.endDate || date <= state.endDate;
 
 /** The `index`-th occurrence (0 = start date). Computed from the start to avoid month-end drift. */
 export function occurrence(rule: Recurrence, index: number): DayKey {
@@ -85,7 +90,7 @@ export function dueOccurrences(state: RunState, today: DayKey, limit = 1000): Da
   let remaining = remainingRuns(state);
   for (let i = firstIndexAfter(state, state.lastRunDate); remaining > 0 && due.length < limit; i++) {
     const date = occurrence(state, i);
-    if (date > today) break;
+    if (date > today || !beforeEnd(state, date)) break;
     due.push(date);
     remaining--;
   }
@@ -95,7 +100,13 @@ export function dueOccurrences(state: RunState, today: DayKey, limit = 1000): Da
 /** Next date the plan will record, or null when its run limit is exhausted. */
 export function nextOccurrence(state: RunState): DayKey | null {
   if (remainingRuns(state) === 0) return null;
-  return occurrence(state, firstIndexAfter(state, state.lastRunDate));
+  const date = occurrence(state, firstIndexAfter(state, state.lastRunDate));
+  return beforeEnd(state, date) ? date : null;
+}
+
+/** How many runs fall between the start date and `endDate` (inclusive). */
+export function runsUntil(rule: Recurrence, endDate: DayKey): number {
+  return endDate < rule.startDate ? 0 : firstIndexAfter(rule, endDate);
 }
 
 /**
@@ -120,7 +131,7 @@ export function forecastOccurrences(state: RunState, today: DayKey, horizon: Day
   let remaining = remainingRuns(state);
   for (let i = firstIndexAfter(state, state.lastRunDate); remaining > 0; i++) {
     const date = occurrence(state, i);
-    if (date > horizon) break;
+    if (date > horizon || !beforeEnd(state, date)) break;
     remaining--;
     if (date > today) forecast.push(date);
   }
@@ -139,6 +150,13 @@ export function initialLastRun(rule: Recurrence, today: DayKey): DayKey | null {
 export function recomputeLastRun(rule: Recurrence, previousLastRun: DayKey | null, today: DayKey): DayKey | null {
   const bound = previousLastRun !== null && previousLastRun >= today ? today : addDays(today, -1);
   return latestOccurrenceOnOrBefore(rule, bound);
+}
+
+/** Status implied by the plan's state: completed once no run is left (count or end date), reopened when one is. */
+export function statusFor(status: ScheduleStatus, state: RunState): ScheduleStatus {
+  if (nextOccurrence(state) === null) return 'completed';
+  if (status === 'completed') return 'active';
+  return status;
 }
 
 /** Status implied by the run counter: plans become completed when they hit their limit and reopen when it grows. */

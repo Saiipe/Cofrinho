@@ -10,6 +10,7 @@ import { resolveAmounts } from '@/domain/amounts';
 import { cardRule, cycleOf } from '@/domain/card';
 import { displayExpression, evaluate, expressionFromDecimal, hasOperator } from '@/domain/calculator';
 import { dayKey, parseDayKey, todayKey, withDay } from '@/domain/dates';
+import { runsUntil } from '@/domain/schedule';
 import { NOTE_MAX } from '@/domain/defaults';
 import { convertMinor, currencyExponent, currencySymbol, minorToDecimalString, parseLocaleNumber, toMinor } from '@/domain/money';
 import { parseQuickEntry } from '@/domain/quickEntry';
@@ -294,6 +295,8 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
       input = { ...base, kind, currency: book.currency, originalAmount: amountMinor, amount: amountMinor, categoryId: null, accountId: null, accountAmount: 0, toAccountId: null, toAccountAmount: 0, split: data };
     }
     if (effectiveRepeat && effectiveInstallments > 1) return fail('tx.repeatNotWithInstallments');
+    // This record is the first run, so an end date must leave at least one more.
+    if (effectiveRepeat?.endDate && runsUntil({ frequency: effectiveRepeat.frequency, startDate: dayKey(date) }, effectiveRepeat.endDate) < 2) return fail('repeat.endTooSoon');
 
     setSaving(true);
     try {
@@ -570,6 +573,7 @@ function TransactionForm({ existing, params }: { existing: Transaction | null; p
         <RepeatSheet
           open
           onClose={() => setSheet(null)}
+          startDate={dayKey(date)}
           value={repeat}
           onChange={(next) => {
             setRepeat(next);

@@ -7,6 +7,12 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 6.2 — Quando termina a repetição
+
+- **Novo:** em *Repetir lançamento* e nos *Recorrentes*, a pergunta **Quando termina?** tem três opções: **Sem data para acabar**, **Depois de X vezes** (3, 6, 12, 18, 24 ou outro número) e **Em uma data**. O app mostra a data do último lançamento e quantas vezes vai repetir no total.
+- **Novo:** com data final, o recorrente para de lançar depois dela e fica como **Concluído**; a lista de recorrentes mostra "até {data}". Os previstos no calendário também respeitam a data final.
+- Os recorrentes que já existem continuam iguais (sem fim ou com a quantidade de vezes que tinham).
+
 ## 6.1 — Correções: nomes das contas e menu ao segurar
 
 - **Correção:** contas criadas automaticamente podiam aparecer com nomes como `account.default.checking` em vez de "Conta principal (Pix / Débito)". Ao abrir o app, esses nomes e observações são corrigidos sozinhos; saldos, lançamentos e contas renomeadas por você não mudam.

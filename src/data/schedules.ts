@@ -1,6 +1,6 @@
 import { resolveAmounts } from '@/domain/amounts';
 import { todayKey, withDay } from '@/domain/dates';
-import { dueOccurrences, forecastHorizon, forecastOccurrences, initialLastRun, recomputeLastRun, statusForCount } from '@/domain/schedule';
+import { dueOccurrences, forecastHorizon, forecastOccurrences, initialLastRun, recomputeLastRun, statusFor } from '@/domain/schedule';
 import type { Book, DayKey, ID, Schedule, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 import { loadRateTable, lookupRate } from './rates';
@@ -35,7 +35,7 @@ export async function saveSchedule(input: ScheduleInput, today: DayKey = todayKe
       id: previous?.id ?? newId(),
       runCount,
       lastRunDate,
-      status: statusForCount(requested, input.totalCount, runCount),
+      status: statusFor(requested, { ...rule, lastRunDate, totalCount: input.totalCount, runCount, endDate: input.endDate }),
       createdAt: previous?.createdAt ?? now,
       updatedAt: now,
     };
@@ -156,7 +156,7 @@ export async function runDueSchedules(now: number = Date.now()): Promise<Schedul
           ...schedule,
           runCount,
           lastRunDate: due[due.length - 1]!,
-          status: statusForCount(schedule.status, schedule.totalCount, runCount),
+          status: statusFor(schedule.status, { ...schedule, runCount, lastRunDate: due[due.length - 1]! }),
           updatedAt: stamp,
         };
         await db.schedules.put(updated);

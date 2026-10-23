@@ -7,6 +7,8 @@ import {
   nextOccurrence,
   occurrence,
   recomputeLastRun,
+  runsUntil,
+  statusFor,
   statusForCount,
   type RunState,
 } from './schedule';
@@ -52,6 +54,29 @@ describe('dueOccurrences', () => {
     expect(due).toHaveLength(30);
     expect(due[0]).toBe('2026-01-11');
     expect(due.at(-1)).toBe('2026-02-09');
+  });
+});
+
+describe('end date', () => {
+  const rent: RunState = { frequency: 'monthly', startDate: '2026-01-10', lastRunDate: '2026-01-10', totalCount: 0, runCount: 1, endDate: '2026-04-10' };
+
+  it('stops recording after the end date (inclusive)', () => {
+    expect(dueOccurrences(rent, '2026-12-31')).toEqual(['2026-02-10', '2026-03-10', '2026-04-10']);
+    expect(nextOccurrence({ ...rent, lastRunDate: '2026-04-10', runCount: 4 })).toBeNull();
+    expect(forecastOccurrences(rent, '2026-02-15', '2026-12-31')).toEqual(['2026-03-10', '2026-04-10']);
+  });
+
+  it('completes the plan once the end date is past and reopens when it moves', () => {
+    const done = { ...rent, lastRunDate: '2026-04-10', runCount: 4 };
+    expect(statusFor('active', done)).toBe('completed');
+    expect(statusFor('completed', { ...done, endDate: '2026-12-31' })).toBe('active');
+    expect(statusFor('paused', rent)).toBe('paused');
+  });
+
+  it('counts the runs up to an end date', () => {
+    expect(runsUntil(rent, '2026-04-10')).toBe(4);
+    expect(runsUntil(rent, '2026-04-09')).toBe(3);
+    expect(runsUntil(rent, '2025-12-31')).toBe(0);
   });
 });
 
