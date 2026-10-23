@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createTranslator } from '@/i18n';
 import { adjustAccountBalance, saveAccount } from './accounts';
 import { createBackup, parseBackup, restoreBackup } from './backup';
-import { createBook, deleteBook } from './books';
+import { createBook, deleteBook, repairDefaultNames } from './books';
 import { setCategoryBudget, setTotalBudget } from './budgets';
 import { deleteCategory } from './categories';
 import { db } from './db';
@@ -143,6 +143,21 @@ describe('recurring runner', () => {
     );
     expect(await runDueSchedules(new Date(2026, 9, 20, 9).getTime())).toEqual([]);
     expect((await db.schedules.toArray())[0]).toMatchObject({ runCount: 0 });
+  });
+});
+
+describe('default names', () => {
+  it('translates names stored as raw keys and leaves real names alone', async () => {
+    const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
+    const base = { bookId: book.id, type: 'debit' as const, icon: 'bank', color: '#000', currency: 'BRL', initialBalance: 0, excludeFromTotals: false, isDefault: false, order: 0, createdAt: 0, updatedAt: 0 };
+    await db.accounts.bulkAdd([
+      { ...base, id: 'raw', name: 'account.default.checking', note: 'account.default.checking.note' },
+      { ...base, id: 'mine', name: 'Nubank', note: 'account.default é meu texto' },
+    ]);
+    expect(await repairDefaultNames('pt-BR')).toBe(1);
+    expect(await db.accounts.get('raw')).toMatchObject({ name: 'Conta principal (Pix / Débito)', note: 'Conta corrente principal do dia a dia' });
+    expect(await db.accounts.get('mine')).toMatchObject({ name: 'Nubank', note: 'account.default é meu texto' });
+    expect(await repairDefaultNames('pt-BR')).toBe(0);
   });
 });
 

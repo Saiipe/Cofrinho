@@ -110,9 +110,18 @@ export function LongPressTooltip() {
     };
     // Android's own long-press signal; it can beat our timer when the system hold delay is short.
     const onContextMenu = (event: Event) => {
-      if (!press && !fired) return;
-      event.preventDefault();
-      show();
+      if (press || fired) {
+        event.preventDefault();
+        show();
+        return;
+      }
+      // No browser menu on links and images (open link, copy address, save image) anywhere in the app;
+      // text fields keep theirs for paste.
+      if (!(event.target as Element | null)?.closest?.('input, textarea, [contenteditable="true"]')) event.preventDefault();
+    };
+    // Holding a link starts a drag that shows its address; nothing in the app is dragged natively.
+    const onDragStart = (event: DragEvent) => {
+      if ((event.target as Element | null)?.closest?.('a, img')) event.preventDefault();
     };
     const onScroll = () => {
       cancel();
@@ -126,6 +135,7 @@ export function LongPressTooltip() {
     // On `window` so a swallowed click never reaches document listeners (tap sounds).
     window.addEventListener('click', onClick, true);
     document.addEventListener('contextmenu', onContextMenu, true);
+    document.addEventListener('dragstart', onDragStart, true);
     window.addEventListener('scroll', onScroll, true);
     return () => {
       cancel();
@@ -136,6 +146,7 @@ export function LongPressTooltip() {
       document.removeEventListener('pointercancel', onCancel, true);
       window.removeEventListener('click', onClick, true);
       document.removeEventListener('contextmenu', onContextMenu, true);
+      document.removeEventListener('dragstart', onDragStart, true);
       window.removeEventListener('scroll', onScroll, true);
     };
   }, []);

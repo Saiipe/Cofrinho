@@ -153,7 +153,9 @@
   /* Touch and hold shows our own tooltip instead of text selection or the link menu. */
   button,
   a,
+  img,
   [role='button'] {
+    -webkit-user-drag: none;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;

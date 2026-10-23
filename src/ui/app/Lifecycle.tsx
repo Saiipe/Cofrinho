@@ -3,7 +3,7 @@ import { SystemBars, SystemBarsStyle } from '@capacitor/core';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { ensureBookDefaults } from '@/data/books';
+import { ensureBookDefaults, repairDefaultNames } from '@/data/books';
 import { refreshCdiIfStale } from '@/data/cdi';
 import { db } from '@/data/db';
 import { refreshRatesIfStale } from '@/data/rates';
@@ -70,7 +70,7 @@ export function Lifecycle() {
   }, [toast, t]);
 
   useEffect(() => {
-    void ensureBookDefaults(settings.language);
+    void ensureBookDefaults(settings.language).then(() => repairDefaultNames(settings.language));
     void refreshRatesIfStale(settings.ratesUpdatedAt);
     void refreshCdiIfStale(settings);
     // Ask the browser not to evict our IndexedDB under storage pressure.

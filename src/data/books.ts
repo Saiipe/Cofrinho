@@ -169,6 +169,31 @@ export async function ensureBookDefaults(language: Language = 'pt-BR'): Promise<
   });
 }
 
+const RAW_DEFAULT_TEXT = /^(account|tag)\.default\.[\w.]+$/;
+
+/**
+ * Early builds could store default account and tag names as their untranslated keys
+ * ("account.default.checking"). Translates any such leftover in place; real names are never touched.
+ */
+export async function repairDefaultNames(language: Language = 'pt-BR'): Promise<number> {
+  const t = createTranslator(language);
+  const fix = (text: string) => (RAW_DEFAULT_TEXT.test(text) ? t(text as MessageKey) : text);
+  return db.transaction('rw', [db.accounts, db.tags], async () => {
+    let fixed = 0;
+    const accounts = await db.accounts.filter((a) => RAW_DEFAULT_TEXT.test(a.name) || RAW_DEFAULT_TEXT.test(a.note)).toArray();
+    for (const account of accounts) {
+      await db.accounts.update(account.id, { name: fix(account.name), note: fix(account.note), updatedAt: Date.now() });
+      fixed++;
+    }
+    const tags = await db.tags.filter((tag) => RAW_DEFAULT_TEXT.test(tag.name)).toArray();
+    for (const tag of tags) {
+      await db.tags.update(tag.id, { name: fix(tag.name), updatedAt: Date.now() });
+      fixed++;
+    }
+    return fixed;
+  });
+}
+
 export async function updateBook(id: ID, patch: Partial<Pick<Book, 'name' | 'currency' | 'color'>>): Promise<void> {
   await db.books.update(id, { ...patch, updatedAt: Date.now() });
 }
