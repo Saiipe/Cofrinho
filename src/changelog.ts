@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '6.3.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Widgets novos', en: 'New widgets' },
+    changes: [
+      { kind: 'feature', text: { 'pt-BR': 'Quatro widgets coloridos para a tela inicial: Orçamento do mês, Metas, Próximas contas e Patrimônio (com o rendimento dos investimentos). Adicione em Perfil › Widgets e atalhos.', en: 'Four colorful home-screen widgets: Monthly budget, Goals, Upcoming bills and Net worth (with investment yield). Add them in Profile › Widgets and shortcuts.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Os widgets usam os dados que você já tem e escondem os valores com Ocultar valores ou o bloqueio ativado.', en: 'Widgets use the data you already have and hide amounts when Hide amounts or the lock is on.' } },
+    ],
+  },
+  {
     version: '6.2.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Quando termina a repetição', en: 'When a repetition ends' },

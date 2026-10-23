@@ -25,7 +25,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class CofrinhoPlugin extends Plugin {
 
     private static final String[] WIDGET_KEYS = {
-        "month", "spentLabel", "spent", "incomeLabel", "income", "balanceLabel", "balance", "expenseButton", "incomeButton", "categoriesJson"
+        "month", "spentLabel", "spent", "incomeLabel", "income", "balanceLabel", "balance", "expenseButton", "incomeButton", "categoriesJson",
+        "budgetJson", "goalsJson", "upcomingJson", "wealthJson"
     };
 
     @PluginMethod
@@ -68,6 +69,18 @@ public class CofrinhoPlugin extends Plugin {
         call.resolve(result);
     }
 
+    private static Class<?> widgetProvider(String kind) {
+        switch (kind) {
+            case "summary": return SummaryWidget.class;
+            case "entry": return QuickEntryWidget.class;
+            case "budget": return BudgetWidget.class;
+            case "goals": return GoalsWidget.class;
+            case "upcoming": return UpcomingWidget.class;
+            case "wealth": return WealthWidget.class;
+            default: return QuickAddWidget.class;
+        }
+    }
+
     @PluginMethod
     public void requestPinWidget(PluginCall call) {
         JSObject result = new JSObject();
@@ -76,8 +89,7 @@ public class CofrinhoPlugin extends Plugin {
             Context context = getContext();
             AppWidgetManager manager = AppWidgetManager.getInstance(context);
             if (manager.isRequestPinAppWidgetSupported()) {
-                String kind = call.getString("kind", "quick");
-                Class<?> provider = "summary".equals(kind) ? SummaryWidget.class : "entry".equals(kind) ? QuickEntryWidget.class : QuickAddWidget.class;
+                Class<?> provider = widgetProvider(call.getString("kind", "quick"));
                 requested = manager.requestPinAppWidget(new ComponentName(context, provider), null, null);
             }
         }

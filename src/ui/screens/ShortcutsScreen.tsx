@@ -1,4 +1,4 @@
-import { CreditCard, Goal, Info, LayoutGrid, Minus, PanelBottom, Plus, Search, ShieldCheck, Sprout, SquarePlus, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CreditCard, Goal, Info, Landmark, LayoutGrid, Minus, PanelBottom, Plus, Search, ShieldCheck, Sprout, SquarePlus, Wallet, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { nativeCapabilities, pinShortcut, requestPinWidget, type ShortcutIcon, type WidgetKind } from '@/services/native';
 import { isNative } from '@/services/platform';
@@ -26,15 +26,20 @@ export const SHORTCUTS: ShortcutOption[] = [
   { id: 'cards', icon: 'cards', glyph: CreditCard, color: '#2563eb', label: 'shortcuts.cards', path: '/cards' },
 ];
 
-const WIDGETS: { kind: WidgetKind; title: MessageKey; hint: MessageKey }[] = [
-  { kind: 'entry', title: 'widgets.entry', hint: 'widgets.entryHint' },
-  { kind: 'quick', title: 'widgets.quick', hint: 'widgets.quickHint' },
-  { kind: 'summary', title: 'widgets.summary', hint: 'widgets.summaryHint' },
+/** `color`: the widget's gradient, so the list previews how it looks on the home screen. */
+const WIDGETS: { kind: WidgetKind; title: MessageKey; hint: MessageKey; glyph: LucideIcon; color: string }[] = [
+  { kind: 'budget', title: 'widgets.budget', hint: 'widgets.budgetHint', glyph: Wallet, color: 'linear-gradient(135deg, #0f766e, #14b8a6)' },
+  { kind: 'goals', title: 'widgets.goals', hint: 'widgets.goalsHint', glyph: Goal, color: 'linear-gradient(135deg, #6d28d9, #c026d3)' },
+  { kind: 'upcoming', title: 'widgets.upcoming', hint: 'widgets.upcomingHint', glyph: CalendarClock, color: 'linear-gradient(135deg, #1e3a8a, #4f46e5)' },
+  { kind: 'wealth', title: 'widgets.wealth', hint: 'widgets.wealthHint', glyph: Landmark, color: 'linear-gradient(135deg, #064e3b, #059669)' },
+  { kind: 'entry', title: 'widgets.entry', hint: 'widgets.entryHint', glyph: PanelBottom, color: '#0f766e' },
+  { kind: 'quick', title: 'widgets.quick', hint: 'widgets.quickHint', glyph: SquarePlus, color: '#0f766e' },
+  { kind: 'summary', title: 'widgets.summary', hint: 'widgets.summaryHint', glyph: LayoutGrid, color: '#0f766e' },
 ];
 
 function Glyph({ icon: Icon, color }: { icon: LucideIcon; color: string }) {
   return (
-    <span className="flex size-10 items-center justify-center rounded-full text-white" style={{ backgroundColor: color }} aria-hidden>
+    <span className="flex size-10 items-center justify-center rounded-full text-white" style={{ background: color }} aria-hidden>
       <Icon className="size-5" strokeWidth={2.4} />
     </span>
   );
@@ -81,7 +86,7 @@ export default function ShortcutsScreen() {
             <div key={widget.kind}>
               {index > 0 && <Divider inset />}
               <Row
-                leading={<Glyph icon={widget.kind === 'summary' ? LayoutGrid : widget.kind === 'entry' ? PanelBottom : SquarePlus} color="#0f766e" />}
+                leading={<Glyph icon={widget.glyph} color={widget.color} />}
                 title={t(widget.title)}
                 subtitle={t(widget.hint)}
                 trailing={

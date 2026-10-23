@@ -7,6 +7,16 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 6.3 — Widgets novos
+
+- **Novo:** quatro widgets coloridos, com fundo em degradê, para a tela inicial (*Perfil › Widgets e atalhos*):
+  - **Orçamento do mês** (4×2, verde-água): quanto ainda pode gastar, barra de quanto já foi do orçamento, "R$ X de R$ Y" e quanto dá por dia até o fim do mês. Fica vermelho quando passa do orçamento.
+  - **Metas** (4×3, roxo): até 3 metas com barra, porcentagem e quanto já guardou de quanto.
+  - **Próximas contas** (4×3, azul-índigo): os próximos recorrentes com a data num selo branco, "amanhã" / "em 5 dias" e o valor (receitas em verde).
+  - **Patrimônio** (4×2, verde-esmeralda): total nas contas em dourado, quanto os investimentos rendem por mês (regra da 6.0) e as 3 maiores contas.
+- Tocar no widget abre a tela certa (Orçamento, Metas, Calendário ou Contas). Com "Ocultar valores" ou bloqueio ativado, os valores aparecem como ••••.
+- Usa os dados que já estão no app: nada para recadastrar.
+
 ## 6.2 — Quando termina a repetição
 
 - **Novo:** em *Repetir lançamento* e nos *Recorrentes*, a pergunta **Quando termina?** tem três opções: **Sem data para acabar**, **Depois de X vezes** (3, 6, 12, 18, 24 ou outro número) e **Em uma data**. O app mostra a data do último lançamento e quantas vezes vai repetir no total.

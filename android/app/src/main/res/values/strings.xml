@@ -22,4 +22,18 @@
     <string name="shortcut_search_long">Buscar lançamentos</string>
     <string name="widget_entry_label">Cadastro rápido</string>
     <string name="widget_entry_description">Lance despesas e receitas numa mini tela, sem abrir o app</string>
+    <string name="widget_budget_label">Orçamento do mês</string>
+    <string name="widget_budget_description">Quanto ainda pode gastar no mês, com barra e valor por dia</string>
+    <string name="widget_can_spend">Ainda pode gastar</string>
+    <string name="widget_budget_empty">Defina um orçamento no app para ver aqui quanto ainda pode gastar.</string>
+    <string name="widget_goals_label">Metas</string>
+    <string name="widget_goals_description">Progresso das suas metas</string>
+    <string name="widget_goals_empty">Crie uma meta no app para acompanhar aqui.</string>
+    <string name="widget_upcoming_label">Próximas contas</string>
+    <string name="widget_upcoming_description">Os próximos lançamentos recorrentes</string>
+    <string name="widget_upcoming_empty">Nenhuma conta prevista até o fim do mês que vem.</string>
+    <string name="widget_wealth_label">Patrimônio</string>
+    <string name="widget_wealth_description">Total nas contas e rendimento dos investimentos</string>
+    <string name="widget_wealth_total">Total nas contas</string>
+    <string name="widget_wealth_empty">Cadastre suas contas no app.</string>
 </resources>

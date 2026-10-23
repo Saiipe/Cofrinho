@@ -7,7 +7,7 @@ import { isNative } from './platform';
  */
 
 export type ShortcutIcon = 'expense' | 'income' | 'search' | 'garden' | 'goals' | 'cards';
-export type WidgetKind = 'quick' | 'summary' | 'entry';
+export type WidgetKind = 'quick' | 'summary' | 'entry' | 'budget' | 'goals' | 'upcoming' | 'wealth';
 
 export interface WidgetData {
   month: string;
@@ -21,13 +21,21 @@ export interface WidgetData {
   incomeButton: string;
   /** `[{ id, name }]` of the expense categories offered as shortcuts by the "Cadastro rápido" widget. */
   categoriesJson: string;
+  /** Budget widget: `{ title, hasBudget, over, label, available, spentLine, percent, perDay, empty }`. */
+  budgetJson: string;
+  /** Goals widget: `{ items: [{ name, percent, line }], empty }`. */
+  goalsJson: string;
+  /** Upcoming widget: `{ items: [{ day, month, name, when, amount, income }], empty }`. */
+  upcomingJson: string;
+  /** Wealth widget: `{ hasAccounts, total, label, items: [{ name, value }], yieldLine, empty }`. */
+  wealthJson: string;
 }
 
 interface CofrinhoPlugin {
   capabilities(): Promise<{ pinShortcuts: boolean; pinWidgets: boolean }>;
   pinShortcut(options: { id: string; label: string; url: string; icon: ShortcutIcon }): Promise<{ requested: boolean }>;
   requestPinWidget(options: { kind: WidgetKind }): Promise<{ requested: boolean }>;
-  updateWidgets(options: WidgetData): Promise<void>;
+  updateWidgets(options: Partial<WidgetData>): Promise<void>;
   closeQuickAdd(): Promise<void>;
   openApp(options: { url: string }): Promise<void>;
 }
@@ -72,7 +80,8 @@ export async function requestPinWidget(kind: WidgetKind): Promise<boolean> {
   }
 }
 
-export async function updateWidgets(data: WidgetData): Promise<void> {
+/** Keys left out keep their last value on the device. */
+export async function updateWidgets(data: Partial<WidgetData>): Promise<void> {
   if (!isNative) return;
   try {
     await Cofrinho.updateWidgets(data);

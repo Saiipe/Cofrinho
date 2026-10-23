@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Goals widget: purple to fuchsia. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="315" android:startColor="#6D28D9" android:endColor="#C026D3" android:type="linear" />
+    <corners android:radius="28dp" />
+</shape>

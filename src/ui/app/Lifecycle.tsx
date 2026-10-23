@@ -7,10 +7,11 @@ import { ensureBookDefaults, repairDefaultNames } from '@/data/books';
 import { refreshCdiIfStale } from '@/data/cdi';
 import { db } from '@/data/db';
 import { refreshRatesIfStale } from '@/data/rates';
-import { runDueSchedules } from '@/data/schedules';
-import { transactionsInPeriod } from '@/data/transactions';
+import { forecastTransactions, runDueSchedules } from '@/data/schedules';
+import { bookTransactions, transactionsInPeriod } from '@/data/transactions';
+import { accountBalances } from '@/domain/balances';
 import { monthPeriodOf, todayKey } from '@/domain/dates';
-import { formatMoney } from '@/domain/money';
+import { convertMinor, formatMoney } from '@/domain/money';
 import { getLockConfig } from '@/services/lock';
 import { deepLinkPath, updateWidgets } from '@/services/native';
 import { notifyNow, startWebReminderTimers, syncNativeReminders } from '@/services/notifications';
@@ -20,7 +21,7 @@ import { useFormat } from '../hooks/useFormat';
 import { useApp } from './AppContext';
 import { useBook } from './BookContext';
 import { handleBack } from './back';
-import { widgetCategories, widgetPayload } from './widgets';
+import { widgetCategories, widgetExtras, widgetPayload } from './widgets';
 
 const TAB_ROOTS = ['/', '/charts', '/reports', '/me'];
 
@@ -142,18 +143,42 @@ export function Lifecycle() {
 /** Keeps the home-screen widgets showing the current month of the current book. */
 function useWidgetSync() {
   const { settings, t } = useApp();
-  const { book, categoryMap, topCategories, categoryName } = useBook();
+  const { book, categoryMap, topCategories, categoryName, accounts, rate } = useBook();
   const format = useFormat();
   const today = todayKey();
   const period = useMemo(() => monthPeriodOf(today, settings.monthStartDay), [today, settings.monthStartDay]);
   const transactions = useLiveQuery(async () => (isNative ? transactionsInPeriod(book.id, period) : null), [book.id, period.start, period.end]);
   const lock = useLiveQuery(async () => (isNative ? getLockConfig() : null), []);
+  // Budget, goals, upcoming and wealth widgets.
+  const extras = useLiveQuery(async () => {
+    if (!isNative) return null;
+    const [budgets, goals, forecast, all] = await Promise.all([
+      db.budgets.where('bookId').equals(book.id).toArray(),
+      db.goals.where('bookId').equals(book.id).toArray(),
+      forecastTransactions(book.id, today),
+      bookTransactions(book.id),
+    ]);
+    return { budget: budgets.find((b) => b.categoryId === null)?.amount ?? 0, goals, forecast, all };
+  }, [book.id, today]);
 
   useEffect(() => {
-    if (!transactions || !lock) return;
+    if (!transactions || !lock || !extras) return;
+    const hidden = settings.hideAmounts || lock.enabled;
     const shortcuts = widgetCategories(transactions, categoryMap, topCategories('expense')).map((c) => ({ id: c.id, name: categoryName(c) }));
-    const data = widgetPayload({ transactions, period, hidden: settings.hideAmounts || lock.enabled, shortcuts }, format, t);
+    const toBook = (amount: number, currency: string) => {
+      if (currency === book.currency) return amount;
+      const r = rate(currency, book.currency);
+      return r === null ? null : convertMinor(amount, currency, book.currency, r);
+    };
+    const data = {
+      ...widgetPayload({ transactions, period, hidden, shortcuts }, format, t),
+      ...widgetExtras(
+        { today, period, transactions, budget: extras.budget, goals: extras.goals, forecast: extras.forecast, accounts, balances: accountBalances(accounts, extras.all), toBook, cdi: settings.cdiRate, hidden },
+        format,
+        t,
+      ),
+    };
     const timer = window.setTimeout(() => void updateWidgets(data), 500);
     return () => window.clearTimeout(timer);
-  }, [transactions, lock, settings.hideAmounts, format, period, t, categoryMap, topCategories, categoryName]);
+  }, [transactions, lock, extras, settings.hideAmounts, settings.cdiRate, format, period, today, t, categoryMap, topCategories, categoryName, accounts, rate, book.currency]);
 }
