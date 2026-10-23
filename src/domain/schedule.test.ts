@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   dueOccurrences,
+  forecastHorizon,
+  forecastOccurrences,
   initialLastRun,
   nextOccurrence,
   occurrence,
@@ -50,6 +52,28 @@ describe('dueOccurrences', () => {
     expect(due).toHaveLength(30);
     expect(due[0]).toBe('2026-01-11');
     expect(due.at(-1)).toBe('2026-02-09');
+  });
+});
+
+describe('forecast', () => {
+  it('reaches the end of the next month only', () => {
+    expect(forecastHorizon('2026-10-22')).toBe('2026-11-30');
+    expect(forecastHorizon('2026-12-01')).toBe('2027-01-31');
+    expect(forecastHorizon('2027-01-31')).toBe('2027-02-28');
+  });
+
+  it('lists runs after today up to the horizon', () => {
+    const rent = { ...monthlyRent, lastRunDate: '2026-10-01', runCount: 10 };
+    expect(forecastOccurrences(rent, '2026-10-22', forecastHorizon('2026-10-22'))).toEqual(['2026-11-01']);
+    const weekly: RunState = { frequency: 'weekly', startDate: '2026-10-20', lastRunDate: '2026-10-20', totalCount: 0, runCount: 1 };
+    expect(forecastOccurrences(weekly, '2026-10-22', '2026-11-30')).toEqual(['2026-10-27', '2026-11-03', '2026-11-10', '2026-11-17', '2026-11-24']);
+  });
+
+  it('leaves runs due today to the real catch-up and respects the run limit', () => {
+    const pending = { ...monthlyRent, lastRunDate: '2026-09-01', runCount: 9, totalCount: 11 };
+    // October 1st is due (recorded on open) and uses the 10th run; November is the 11th and last.
+    expect(forecastOccurrences(pending, '2026-10-22', '2026-12-31')).toEqual(['2026-11-01']);
+    expect(forecastOccurrences({ ...pending, runCount: 11 }, '2026-10-22', '2026-12-31')).toEqual([]);
   });
 });
 

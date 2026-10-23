@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '5.7.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Recorrentes previstos no calendário', en: 'Recurring forecasts in the calendar' },
+    changes: [
+      { kind: 'feature', text: { 'pt-BR': 'O calendário mostra os recorrentes que ainda vão acontecer como "Previsto" (dias tracejados, valores em cinza) até o fim do mês que vem, com o total ainda previsto no mês. Tocar num previsto abre o recorrente.', en: 'The calendar shows upcoming recurring records as "Forecast" (dashed days, gray amounts) until the end of next month, with the amount still expected this month. Tap a forecast to open its recurring plan.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'Previstos não mexem no saldo, nos gráficos nem no orçamento e valem para os recorrentes já cadastrados: nada precisa ser recadastrado.', en: 'Forecasts do not change balances, charts or budgets and work with existing recurring plans: nothing needs to be re-entered.' } },
+    ],
+  },
+  {
     version: '5.6.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Ícone novo', en: 'New icon' },

@@ -200,6 +200,9 @@ export const ptBR = {
   'calendar.perDay': 'Disponível por dia',
   'calendar.overBudget': 'Acima do orçamento',
   'calendar.withinBudget': 'Dentro do orçamento',
+  'calendar.forecast': 'Previsto',
+  'calendar.forecastMonth': 'Ainda previsto no mês',
+  'calendar.forecastLimit': 'Os recorrentes aparecem como previstos só até {month}.',
 
   'charts.title': 'Gráficos',
   'charts.month': 'Mês',
@@ -445,7 +448,7 @@ export const ptBR = {
   'recurring.pause': 'Pausar',
   'recurring.resume': 'Retomar',
   'recurring.next': 'Próximo: {date}',
-  'recurring.hint': 'Os lançamentos são gerados automaticamente nas datas previstas sempre que o app é aberto, inclusive os que ficaram pendentes. Dica: você também pode marcar "Repetir" direto no cadastro de uma despesa ou receita.',
+  'recurring.hint': 'Os lançamentos são gerados automaticamente nas datas previstas sempre que o app é aberto, inclusive os que ficaram pendentes. No calendário, os próximos aparecem como previstos até o fim do mês que vem. Dica: você também pode marcar "Repetir" direto no cadastro de uma despesa ou receita.',
   'recurring.ran': '{name}: {amount} registrado',
   'recurring.empty': 'Nenhum lançamento recorrente',
   'recurring.emptyHint': 'Automatize aluguel, salário, assinaturas e outras contas fixas.',

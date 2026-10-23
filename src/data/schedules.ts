@@ -1,7 +1,7 @@
 import { resolveAmounts } from '@/domain/amounts';
 import { todayKey, withDay } from '@/domain/dates';
-import { dueOccurrences, initialLastRun, recomputeLastRun, statusForCount } from '@/domain/schedule';
-import type { DayKey, ID, Schedule, Transaction } from '@/domain/types';
+import { dueOccurrences, forecastHorizon, forecastOccurrences, initialLastRun, recomputeLastRun, statusForCount } from '@/domain/schedule';
+import type { Book, DayKey, ID, Schedule, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 import { loadRateTable, lookupRate } from './rates';
 
@@ -54,6 +54,76 @@ export async function setSchedulePaused(id: ID, paused: boolean): Promise<void> 
   await db.schedules.update(id, { status: paused ? 'paused' : 'active', updatedAt: Date.now() });
 }
 
+type Recorder = (day: DayKey, stamp: number) => Transaction;
+
+/**
+ * Builds the records a plan creates, with amounts converted to the book and account currencies.
+ * Null when the plan cannot record now (group book, deleted transfer accounts, missing exchange rate).
+ */
+async function scheduleRecorder(schedule: Schedule, book: Book, rate: (from: string, to: string) => number | null): Promise<Recorder | null> {
+  if (book.type === 'split') return null;
+  const account = schedule.accountId ? await db.accounts.get(schedule.accountId) : undefined;
+  const toAccount = schedule.toAccountId ? await db.accounts.get(schedule.toAccountId) : undefined;
+  if (schedule.kind === 'transfer' && (!account || !toAccount)) return null;
+
+  const resolved = resolveAmounts(
+    {
+      kind: schedule.kind,
+      currency: schedule.currency,
+      originalAmount: schedule.amount,
+      bookCurrency: book.currency,
+      accountCurrency: account?.currency ?? null,
+      toAccountCurrency: toAccount?.currency ?? null,
+      toAmountOverride: schedule.toAmount,
+    },
+    rate,
+  );
+  if (!resolved.ok) return null;
+
+  return (day, stamp) => ({
+    id: newId(),
+    bookId: book.id,
+    kind: schedule.kind,
+    date: withDay(day, schedule.createdAt),
+    ...resolved.value,
+    currency: schedule.currency,
+    originalAmount: schedule.amount,
+    categoryId: schedule.kind === 'transfer' ? null : schedule.categoryId,
+    accountId: account?.id ?? null,
+    toAccountId: toAccount?.id ?? null,
+    note: schedule.note || schedule.name,
+    photoIds: [],
+    ...(schedule.tagIds?.length ? { tagIds: schedule.tagIds } : {}),
+    scheduleId: schedule.id,
+    createdAt: stamp,
+    updatedAt: stamp,
+  });
+}
+
+/**
+ * Records the active plans of a book will still create after today, up to the forecast horizon
+ * (see `forecastHorizon`). Nothing is stored: forecasts are recomputed from the plans on each call.
+ */
+export async function forecastTransactions(bookId: ID, today: DayKey = todayKey()): Promise<Transaction[]> {
+  const book = await db.books.get(bookId);
+  if (!book) return [];
+  const plans = await db.schedules.where('bookId').equals(bookId).filter((s) => s.status === 'active').toArray();
+  if (!plans.length) return [];
+  const table = await loadRateTable();
+  const rate = (from: string, to: string) => lookupRate(table, from, to);
+  const horizon = forecastHorizon(today);
+  const forecast: Transaction[] = [];
+  for (const schedule of plans) {
+    const days = forecastOccurrences(schedule, today, horizon);
+    if (!days.length) continue;
+    const build = await scheduleRecorder(schedule, book, rate);
+    if (!build) continue;
+    // Stable ids keep list keys steady across live-query refreshes.
+    for (const day of days) forecast.push({ ...build(day, schedule.updatedAt), id: `forecast:${schedule.id}:${day}` });
+  }
+  return forecast.sort((a, b) => a.date - b.date);
+}
+
 export interface ScheduleRun {
   schedule: Schedule;
   created: Transaction[];
@@ -75,44 +145,11 @@ export async function runDueSchedules(now: number = Date.now()): Promise<Schedul
         const due = dueOccurrences(schedule, today);
         if (!due.length) continue;
         const book = await db.books.get(schedule.bookId);
-        if (!book || book.type === 'split') continue;
-        const account = schedule.accountId ? await db.accounts.get(schedule.accountId) : undefined;
-        const toAccount = schedule.toAccountId ? await db.accounts.get(schedule.toAccountId) : undefined;
-        if (schedule.kind === 'transfer' && (!account || !toAccount)) continue;
-
-        const resolved = resolveAmounts(
-          {
-            kind: schedule.kind,
-            currency: schedule.currency,
-            originalAmount: schedule.amount,
-            bookCurrency: book.currency,
-            accountCurrency: account?.currency ?? null,
-            toAccountCurrency: toAccount?.currency ?? null,
-            toAmountOverride: schedule.toAmount,
-          },
-          rate,
-        );
-        if (!resolved.ok) continue;
-
+        if (!book) continue;
+        const build = await scheduleRecorder(schedule, book, rate);
+        if (!build) continue;
         const stamp = Date.now();
-        const created: Transaction[] = due.map((day) => ({
-          id: newId(),
-          bookId: book.id,
-          kind: schedule.kind,
-          date: withDay(day, schedule.createdAt),
-          ...resolved.value,
-          currency: schedule.currency,
-          originalAmount: schedule.amount,
-          categoryId: schedule.kind === 'transfer' ? null : schedule.categoryId,
-          accountId: account?.id ?? null,
-          toAccountId: toAccount?.id ?? null,
-          note: schedule.note || schedule.name,
-          photoIds: [],
-          ...(schedule.tagIds?.length ? { tagIds: schedule.tagIds } : {}),
-          scheduleId: schedule.id,
-          createdAt: stamp,
-          updatedAt: stamp,
-        }));
+        const created = due.map((day) => build(day, stamp));
         await db.transactions.bulkAdd(created);
         const runCount = schedule.runCount + due.length;
         const updated: Schedule = {

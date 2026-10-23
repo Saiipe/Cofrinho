@@ -8,7 +8,7 @@ import { deleteCategory } from './categories';
 import { db } from './db';
 import { applyImport, previewImport } from './imports';
 import { setCustomRate } from './rates';
-import { runDueSchedules, saveSchedule } from './schedules';
+import { forecastTransactions, runDueSchedules, saveSchedule } from './schedules';
 import { saveTransaction, suggestNotes, type TransactionInput } from './transactions';
 
 const t = createTranslator('pt-BR');
@@ -119,6 +119,20 @@ describe('recurring runner', () => {
     ]);
     expect(await db.schedules.get(id)).toMatchObject({ runCount: 3, status: 'completed', lastRunDate: '2026-03-10' });
     expect(await runDueSchedules(new Date(2026, 4, 1, 10).getTime())).toEqual([]);
+  });
+
+  it('forecasts runs up to the end of next month without storing them', async () => {
+    const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
+    const id = await saveSchedule(
+      { bookId: book.id, name: 'Aluguel', kind: 'expense', categoryId: null, accountId: null, toAccountId: null, frequency: 'monthly', startDate: '2026-10-05', amount: 150_000, currency: 'BRL', toAmount: null, totalCount: 0, note: '', paused: false },
+      '2026-10-05',
+    );
+    await runDueSchedules(new Date(2026, 9, 5, 9).getTime());
+    const forecast = await forecastTransactions(book.id, '2026-10-22');
+    expect(forecast.map((tx) => [new Date(tx.date).getMonth(), new Date(tx.date).getDate(), tx.amount, tx.scheduleId])).toEqual([[10, 5, 150_000, id]]);
+    expect(await db.transactions.count()).toBe(1);
+    await saveSchedule({ ...(await db.schedules.get(id))!, paused: true });
+    expect(await forecastTransactions(book.id, '2026-10-22')).toEqual([]);
   });
 
   it('skips transfers whose accounts were deleted and retries later', async () => {

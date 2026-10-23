@@ -18,7 +18,8 @@ function SystemIcon({ icon: Icon }: { icon: typeof ArrowRightLeft }) {
   );
 }
 
-export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () => void }) {
+/** `forecast`: a run a recurring plan has not recorded yet (calendar forecast), shown faded and labeled. */
+export function TransactionRow({ tx, onClick, forecast }: { tx: Transaction; onClick?: () => void; forecast?: boolean }) {
   const t = useT();
   const { categoryMap, accountMap, memberMap, categoryName } = useBook();
   const navigate = useNavigate();
@@ -57,13 +58,14 @@ export function TransactionRow({ tx, onClick }: { tx: Transaction; onClick?: () 
   }
   if (tx.installment) details.unshift(`${tx.installment.index}/${tx.installment.count}`);
   if (tagNames) details.push(tagNames);
+  if (forecast) details.unshift(t('calendar.forecast'));
   const subtitle = details.filter(Boolean).join(' · ');
 
   return (
     <button
       type="button"
       onClick={onClick ?? (() => navigate(`/tx/${tx.id}`))}
-      className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-surface-2"
+      className={cx('flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-surface-2', forecast && 'opacity-60')}
     >
       {leading}
       <span className="min-w-0 flex-1">
