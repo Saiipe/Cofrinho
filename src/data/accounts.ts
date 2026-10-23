@@ -1,5 +1,6 @@
 import { resolveAmounts } from '@/domain/amounts';
 import { accountBalances } from '@/domain/balances';
+import type { YieldRule } from '@/domain/investment';
 import type { Account, AccountType, Book, ID, Minor, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 import { loadRateTable, lookupRate } from './rates';
@@ -20,6 +21,7 @@ export interface AccountInput {
   creditLimit?: Minor;
   closingDay?: number;
   dueDay?: number;
+  yieldRule?: YieldRule;
 }
 
 export async function saveAccount(input: AccountInput): Promise<ID> {
@@ -43,6 +45,7 @@ export async function saveAccount(input: AccountInput): Promise<ID> {
       creditLimit: input.type === 'credit' ? input.creditLimit : undefined,
       closingDay: input.type === 'credit' ? input.closingDay : undefined,
       dueDay: input.type === 'credit' ? input.dueDay : undefined,
+      yieldRule: input.type === 'investment' ? input.yieldRule : undefined,
       updatedAt: now,
     };
     if (input.id) {

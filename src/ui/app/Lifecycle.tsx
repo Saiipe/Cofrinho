@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { ensureBookDefaults } from '@/data/books';
+import { refreshCdiIfStale } from '@/data/cdi';
 import { db } from '@/data/db';
 import { refreshRatesIfStale } from '@/data/rates';
 import { runDueSchedules } from '@/data/schedules';
@@ -71,9 +72,10 @@ export function Lifecycle() {
   useEffect(() => {
     void ensureBookDefaults(settings.language);
     void refreshRatesIfStale(settings.ratesUpdatedAt);
+    void refreshCdiIfStale(settings);
     // Ask the browser not to evict our IndexedDB under storage pressure.
     void navigator.storage?.persist?.();
-  }, [settings.ratesUpdatedAt]);
+  }, [settings.ratesUpdatedAt, settings.cdiCheckedAt, settings.cdiManual]);
 
   // Reminders: OS-scheduled on Android, in-page timers on the web.
   useEffect(() => {

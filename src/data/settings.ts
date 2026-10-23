@@ -1,3 +1,4 @@
+import { DEFAULT_CDI } from '@/domain/investment';
 import type { NumberStyle } from '@/domain/money';
 import type { ID } from '@/domain/types';
 import { detectLanguage, type Language } from '@/i18n';
@@ -58,6 +59,14 @@ export interface Settings {
   onboarded: boolean;
   lastBackupAt: number | null;
   ratesUpdatedAt: number | null;
+  /** CDI in % a year used by investment projections (Banco Central, or typed by the user). */
+  cdiRate: number;
+  /** Day the CDI refers to (`YYYY-MM-DD`); null while it is the built-in fallback or typed by hand. */
+  cdiDate: string | null;
+  /** Last automatic CDI check (at most once a day). */
+  cdiCheckedAt: number | null;
+  /** The user typed the CDI: automatic updates stop until they switch back. */
+  cdiManual: boolean;
   /** Version whose release notes were already shown; null for installs made before 5.1. */
   lastSeenVersion: string | null;
 }
@@ -105,6 +114,10 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: false,
   lastBackupAt: null,
   ratesUpdatedAt: null,
+  cdiRate: DEFAULT_CDI,
+  cdiDate: null,
+  cdiCheckedAt: null,
+  cdiManual: false,
   lastSeenVersion: null,
 };
 

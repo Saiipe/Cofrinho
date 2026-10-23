@@ -9,6 +9,7 @@ import { db } from '@/data/db';
 import { ACCOUNT_TYPES, isLiability } from '@/domain/balances';
 import { cardRule } from '@/domain/card';
 import { ACCOUNT_TYPE_STYLE, CATEGORY_COLORS } from '@/domain/defaults';
+import type { YieldRule } from '@/domain/investment';
 import type { Account, AccountType } from '@/domain/types';
 import type { MessageKey } from '@/i18n';
 import { accountTypeLabel } from '@/i18n/labels';
@@ -18,6 +19,7 @@ import { AmountSheet } from '../components/AmountSheet';
 import { AccountIcon, BankLogo, BankPickerSheet } from '../components/banks';
 import { BacklogList, CardBacklogSheet, type BacklogMode } from '../components/CardBacklog';
 import { useFeedback } from '../components/feedback';
+import { YieldRuleEditor } from '../components/Investment';
 import { Page, useGoBack } from '../components/Page';
 import { ColorSwatches, CurrencyPickerSheet, IconPickerSheet } from '../components/pickers';
 import { Button, Card, cx, Divider, Row, SwitchRow, TextField } from '../components/primitives';
@@ -55,6 +57,8 @@ function AccountForm({ existing }: { existing: Account | null }) {
   const [creditLimit, setCreditLimit] = useState(existing?.creditLimit ?? 0);
   const [closingDay, setClosingDay] = useState<number | null>(existing?.closingDay ?? null);
   const [dueDay, setDueDay] = useState<number | null>(existing?.dueDay ?? null);
+  const [yieldRule, setYieldRule] = useState<YieldRule | null>(existing?.yieldRule ?? null);
+  const [rateError, setRateError] = useState<string | null>(null);
   const [currency, setCurrency] = useState(existing?.currency ?? book.currency);
   const [initial, setInitial] = useState(existing?.initialBalance ?? 0);
   const [exclude, setExclude] = useState(existing?.excludeFromTotals ?? false);
@@ -87,6 +91,11 @@ function AccountForm({ existing }: { existing: Account | null }) {
       setError(t('accounts.nameRequired'));
       return;
     }
+    const rule = type === 'investment' ? yieldRule : null;
+    if (rule && rule.kind !== 'savings' && !(rule.rate > 0 && rule.rate < 1000)) {
+      setRateError(t('invest.rateInvalid'));
+      return;
+    }
     const id = await saveAccount({
       id: existing?.id,
       bookId: book.id,
@@ -104,6 +113,7 @@ function AccountForm({ existing }: { existing: Account | null }) {
       creditLimit: creditLimit > 0 ? creditLimit : undefined,
       closingDay: closingDay ?? undefined,
       dueDay: dueDay ?? undefined,
+      yieldRule: rule ?? undefined,
     });
     if (isCard && backlog.length) {
       const card = await db.accounts.get(id);
@@ -239,6 +249,17 @@ function AccountForm({ existing }: { existing: Account | null }) {
             </Card>
             <p className="mt-1.5 px-1 text-xs text-muted">{t(`accounts.balanceHint.${type}` as MessageKey)}</p>
           </section>
+        )}
+
+        {type === 'investment' && (
+          <YieldRuleEditor
+            value={yieldRule}
+            onChange={(rule) => {
+              setYieldRule(rule);
+              setRateError(null);
+            }}
+            error={rateError}
+          />
         )}
 
         <Card>
