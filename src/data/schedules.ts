@@ -1,7 +1,7 @@
 import { resolveAmounts } from '@/domain/amounts';
-import { todayKey, withDay } from '@/domain/dates';
+import { addDays, todayKey, withDay } from '@/domain/dates';
 import { dueOccurrences, forecastHorizon, forecastOccurrences, initialLastRun, recomputeLastRun, statusFor } from '@/domain/schedule';
-import type { Book, DayKey, ID, Schedule, Transaction } from '@/domain/types';
+import type { Book, DayKey, Frequency, ID, Schedule, Transaction } from '@/domain/types';
 import { db, newId } from './db';
 import { loadRateTable, lookupRate } from './rates';
 
@@ -41,6 +41,46 @@ export async function saveSchedule(input: ScheduleInput, today: DayKey = todayKe
     };
     await db.schedules.put(schedule);
     return schedule.id;
+  });
+}
+
+/** The plan as form input, so edits go through `saveSchedule` and keep its last-run rules. */
+function asInput(schedule: Schedule): ScheduleInput {
+  const { runCount: _r, lastRunDate: _l, status, createdAt: _c, updatedAt: _u, ...fields } = schedule;
+  return { ...fields, paused: status === 'paused' };
+}
+
+/** Changes how often a plan repeats and when it ends (from the record form's "Repetir"). */
+export async function updateScheduleRule(id: ID, rule: { frequency: Frequency; totalCount: number; endDate?: DayKey }, today: DayKey = todayKey()): Promise<void> {
+  const schedule = await db.schedules.get(id);
+  if (!schedule) return;
+  const { endDate: _old, ...input } = asInput(schedule);
+  await saveSchedule({ ...input, frequency: rule.frequency, totalCount: rule.endDate ? 0 : rule.totalCount, ...(rule.endDate ? { endDate: rule.endDate } : {}) }, today);
+}
+
+/** Stops a plan after its last run; the records it created stay. */
+export async function endSchedule(id: ID, today: DayKey = todayKey()): Promise<void> {
+  const schedule = await db.schedules.get(id);
+  if (!schedule) return;
+  // Before the start date when it never ran, so nothing else is recorded.
+  const endDate = schedule.lastRunDate ?? addDays(schedule.startDate, -1);
+  await saveSchedule({ ...asInput(schedule), totalCount: 0, endDate }, today);
+}
+
+/** Copies what was edited in one of its records to the plan, so the next runs follow it. */
+export async function applyToSchedule(id: ID, tx: Pick<Transaction, 'kind' | 'originalAmount' | 'currency' | 'categoryId' | 'accountId' | 'toAccountId' | 'toAccountAmount' | 'note' | 'tagIds'>): Promise<void> {
+  if (tx.kind !== 'expense' && tx.kind !== 'income' && tx.kind !== 'transfer') return;
+  await db.schedules.update(id, {
+    kind: tx.kind,
+    amount: tx.originalAmount,
+    currency: tx.currency,
+    categoryId: tx.kind === 'transfer' ? null : tx.categoryId,
+    accountId: tx.accountId,
+    toAccountId: tx.kind === 'transfer' ? tx.toAccountId : null,
+    toAmount: tx.kind === 'transfer' && tx.toAccountId ? tx.toAccountAmount : null,
+    note: tx.note,
+    tagIds: tx.tagIds ?? [],
+    updatedAt: Date.now(),
   });
 }
 

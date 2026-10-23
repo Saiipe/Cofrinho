@@ -4,17 +4,37 @@ import { MAX_INSTALLMENTS, splitInstallments } from '@/domain/card';
 import { DETAILS_MAX } from '@/domain/defaults';
 import { addMonthsClamped, dayKey, withDay } from '@/domain/dates';
 import { FREQUENCIES, MAX_RUN_COUNT, occurrence, RUN_COUNT_PRESETS, runsUntil, type Recurrence } from '@/domain/schedule';
-import type { DayKey, Frequency, Minor } from '@/domain/types';
+import type { DayKey, Frequency, Minor, Schedule } from '@/domain/types';
 import type { RepeatRule } from '@/data/transactions';
+import type { Translate } from '@/i18n';
 import { frequencyLabel } from '@/i18n/labels';
 import { useT } from '../app/AppContext';
-import { useFormat } from '../hooks/useFormat';
+import { useFormat, type Formatters } from '../hooks/useFormat';
 import { DatePickerSheet } from './pickers';
 import { Button, Chip, cx } from './primitives';
 import { Sheet } from './Sheet';
 
 /** "Repetir": turns the record being added into a recurring plan. */
-export function RepeatSheet({ open, onClose, value, onChange, startDate }: { open: boolean; onClose: () => void; value: RepeatRule | null; onChange: (rule: RepeatRule | null) => void; startDate: DayKey }) {
+export function RepeatSheet({
+  open,
+  onClose,
+  value,
+  onChange,
+  startDate,
+  minCount = 2,
+  existingPlan = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  value: RepeatRule | null;
+  onChange: (rule: RepeatRule | null) => void;
+  /** First run of the plan (this record, for a new one). */
+  startDate: DayKey;
+  /** Fewest total runs offered: 2 for a new plan (this record plus one), the runs already made for an existing one. */
+  minCount?: number;
+  /** Editing the rule of a plan that already runs (changes apply to the next runs). */
+  existingPlan?: boolean;
+}) {
   const t = useT();
   const frequency = value?.frequency ?? null;
   const setFrequency = (next: Frequency | null) => onChange(next ? { frequency: next, totalCount: value?.totalCount ?? 0, endDate: value?.endDate } : null);
@@ -36,11 +56,11 @@ export function RepeatSheet({ open, onClose, value, onChange, startDate }: { ope
             rule={{ frequency, startDate }}
             count={value?.totalCount ?? 0}
             endDate={value?.endDate ?? null}
-            minCount={2}
+            minCount={minCount}
             onChange={(end) => onChange({ frequency, totalCount: end.count, endDate: end.endDate ?? undefined })}
           />
         )}
-        <p className="text-[0.8rem] text-muted">{t('tx.repeatHint')}</p>
+        <p className="text-[0.8rem] text-muted">{t(existingPlan ? 'tx.repeatHintExisting' : 'tx.repeatHint')}</p>
       </div>
     </Sheet>
   );
@@ -231,4 +251,11 @@ export function MemoSheet({ open, onClose, value, onChange }: { open: boolean; o
       </div>
     </Sheet>
   );
+}
+
+/** How a plan ends, worded the same everywhere: "até 22 de out. de 2027", "3 de 12" or "Sem data para acabar". */
+export function scheduleEndLabel(schedule: Pick<Schedule, 'endDate' | 'totalCount' | 'runCount'>, t: Translate, format: Pick<Formatters, 'date'>): string {
+  if (schedule.endDate) return t('recurring.until', { date: format.date(schedule.endDate) });
+  if (schedule.totalCount > 0) return t('recurring.progress', { done: schedule.runCount, total: schedule.totalCount });
+  return t('repeat.end.never');
 }

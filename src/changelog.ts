@@ -18,6 +18,16 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '6.4.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Repetir também ao editar', en: 'Repeat when editing too' },
+    changes: [
+      { kind: 'fix', text: { 'pt-BR': 'Ao editar um lançamento, o Repetir aparece com a regra atual: dá para mudar a frequência e quando termina, encerrar a repetição ou tornar recorrente um lançamento comum.', en: 'When editing a record, Repeat shows its current rule: change the frequency and when it ends, stop repeating, or make a plain record recurring.' } },
+      { kind: 'feature', text: { 'pt-BR': 'Ao mudar valor, categoria, conta ou descrição de um recorrente, o app pergunta se muda só este ou também os próximos.', en: 'Changing the amount, category, account or description of a recurring record asks whether to change only this one or the next ones too.' } },
+      { kind: 'improvement', text: { 'pt-BR': 'O detalhe do lançamento mostra a frequência e quando o recorrente termina.', en: 'Record details show the frequency and when the plan ends.' } },
+    ],
+  },
+  {
     version: '6.3.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Widgets novos', en: 'New widgets' },

@@ -13,6 +13,7 @@ import { InlineNotice, useFeedback } from '../components/feedback';
 import { SwipeRow } from '../components/gestures';
 import { Page } from '../components/Page';
 import { Badge, Card, EmptyState, IconButton, LinkButton } from '../components/primitives';
+import { scheduleEndLabel } from '../components/TransactionExtras';
 import { useFormat } from '../hooks/useFormat';
 
 export default function RecurringScreen() {
@@ -70,11 +71,7 @@ export default function RecurringScreen() {
                     <span className="shrink-0 text-right">
                       <span className="block font-semibold tabular">{format.money(schedule.amount, schedule.currency)}</span>
                       <span className="block text-xs text-muted">
-                        {schedule.endDate
-                          ? t('recurring.until', { date: format.date(schedule.endDate) })
-                          : schedule.totalCount > 0
-                            ? t('recurring.progress', { done: schedule.runCount, total: schedule.totalCount })
-                            : t('recurring.runs', { count: schedule.runCount })}
+                        {schedule.endDate || schedule.totalCount > 0 ? scheduleEndLabel(schedule, t, format) : t('recurring.runs', { count: schedule.runCount })}
                       </span>
                     </span>
                   </Link>

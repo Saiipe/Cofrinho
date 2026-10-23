@@ -8,8 +8,8 @@ import { deleteCategory } from './categories';
 import { db } from './db';
 import { applyImport, previewImport } from './imports';
 import { setCustomRate } from './rates';
-import { forecastTransactions, runDueSchedules, saveSchedule } from './schedules';
-import { saveTransaction, suggestNotes, type TransactionInput } from './transactions';
+import { applyToSchedule, endSchedule, forecastTransactions, runDueSchedules, saveSchedule, updateScheduleRule } from './schedules';
+import { saveRecurringTransaction, saveTransaction, suggestNotes, type TransactionInput } from './transactions';
 
 const t = createTranslator('pt-BR');
 
@@ -204,3 +204,33 @@ describe('import', () => {
   });
 });
 
+
+describe('editing a recurring record', () => {
+  const at = (y: number, m: number, d: number) => new Date(y, m, d, 9).getTime();
+
+  it('turns an existing record into the first run of a new plan without duplicating it', async () => {
+    const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
+    const tx = await saveTransaction(expense(book.id, { date: at(2026, 9, 20), note: 'Academia' }));
+    const saved = await saveRecurringTransaction({ ...expense(book.id, { date: at(2026, 9, 20), note: 'Academia' }), id: tx.id }, { frequency: 'monthly', totalCount: 0 }, 'Academia');
+    expect(saved.id).toBe(tx.id);
+    expect(await db.transactions.count()).toBe(1);
+    expect(await db.schedules.get(saved.scheduleId!)).toMatchObject({ runCount: 1, lastRunDate: '2026-10-20', status: 'active' });
+  });
+
+  it('changes the rule, ends the plan and copies edits to the next runs', async () => {
+    const book = await createBook({ name: 'A', type: 'personal', currency: 'BRL', color: '#000' });
+    const tx = await saveRecurringTransaction(expense(book.id, { date: at(2026, 9, 20), note: 'Aluguel' }), { frequency: 'monthly', totalCount: 0 }, 'Aluguel');
+    const id = tx.scheduleId!;
+
+    await updateScheduleRule(id, { frequency: 'weekly', totalCount: 0, endDate: '2026-12-31' }, '2026-10-22');
+    expect(await db.schedules.get(id)).toMatchObject({ frequency: 'weekly', endDate: '2026-12-31', totalCount: 0, runCount: 1, status: 'active' });
+
+    await applyToSchedule(id, { ...tx, originalAmount: 2_500, note: 'Aluguel novo' });
+    expect(await db.schedules.get(id)).toMatchObject({ amount: 2_500, note: 'Aluguel novo' });
+
+    await endSchedule(id, '2026-10-22');
+    expect(await db.schedules.get(id)).toMatchObject({ endDate: '2026-10-20', status: 'completed' });
+    expect(await runDueSchedules(at(2026, 11, 31))).toEqual([]);
+    expect(await db.transactions.count()).toBe(1);
+  });
+});
