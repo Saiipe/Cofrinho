@@ -7,6 +7,11 @@ Esquema de versão:
 
 O mesmo histórico aparece no app em *Perfil › Sobre o app › Novidades* (`src/changelog.ts`) e, depois de cada atualização, num aviso com o que mudou desde a versão que estava instalada.
 
+## 6.1 — Correções: nomes das contas e menu ao segurar
+
+- **Correção:** contas criadas automaticamente podiam aparecer com nomes como `account.default.checking` em vez de "Conta principal (Pix / Débito)". Ao abrir o app, esses nomes e observações são corrigidos sozinhos; saldos, lançamentos e contas renomeadas por você não mudam.
+- **Correção:** tocar e segurar um item de menu abria o menu de link do Android (endereço, "abrir link"). Agora isso não aparece mais em nenhum lugar do app; nos campos de texto, segurar continua mostrando o menu de colar.
+
 ## 6.0 — Regra de rendimento nos investimentos
 
 - **Novo:** cada investimento tem sua **regra de rendimento**, no cadastro da conta (*Como esse investimento rende?*): **% do CDI** (caixinhas, CDB, Tesouro Selic, LCI/LCA), **% ao ano**, **% ao mês**, **Poupança** ou **Não sei**. Também dá para marcar se desconta **Imposto de Renda**. Ex.: caixinha que rende 115% do CDI → escolha "% do CDI" e digite 115; o app mostra na hora que isso dá ≈ 15,85% ao ano.

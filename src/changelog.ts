@@ -18,6 +18,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '6.1.0',
+    date: '2026-10-22',
+    title: { 'pt-BR': 'Correções: nomes das contas e menu ao segurar', en: 'Fixes: account names and the hold menu' },
+    changes: [
+      { kind: 'fix', text: { 'pt-BR': 'Contas automáticas que apareciam com nomes como "account.default.checking" são corrigidas sozinhas ao abrir o app, sem mexer em saldos nem lançamentos.', en: 'Automatic accounts showing names like "account.default.checking" are fixed on their own when the app opens, without touching balances or records.' } },
+      { kind: 'fix', text: { 'pt-BR': 'Tocar e segurar um item de menu não abre mais o menu de link do Android.', en: 'Touching and holding a menu item no longer opens the Android link menu.' } },
+    ],
+  },
+  {
     version: '6.0.0',
     date: '2026-10-22',
     title: { 'pt-BR': 'Regra de rendimento nos investimentos', en: 'Yield rules for investments' },
